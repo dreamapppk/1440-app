@@ -1,137 +1,1482 @@
-tailwind.config = { darkMode: 'class', theme: { extend: { fontFamily: { sans: ['Inter', 'sans-serif'], mono: ['JetBrains Mono', 'monospace'], }, colors: { obsidian: '#090A0F', slateCard: '#12151E', slateBorder: '#1E2330', gold: '#F59E0B', emerald: '#10B981', rose: '#F43F5E', } } } } /* Custom Scrollbar & Mobile App Feel */ * { -webkit-tap-highlight-color: transparent; user-select: none; } body { background-color: #050608; color: #F8FAFC; font-family: 'Inter', sans-serif; overflow-x: hidden; } .no-scrollbar::-webkit-scrollbar { display: none; } .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; } /* Subtle pulsing glow for live minute counter */ @keyframes pulseGlow { 0%, 100% { box-shadow: 0 0 25px rgba(245, 158, 11, 0.12); } 50% { box-shadow: 0 0 40px rgba(245, 158, 11, 0.26); } } .vault-glow { animation: pulseGlow 3s infinite ease-in-out; } @keyframes secondTick { 0% { transform: scale(1); } 50% { transform: scale(1.03); } 100% { transform: scale(1); } } .tick-pop { animation: secondTick 1s infinite; } /* Smooth circular timer transition */ .timer-ring-circle { transition: stroke-dashoffset 0.35s; transform: rotate(-90deg); transform-origin: 50% 50%; } 
-
-1440 
-
-1440 MINUTE BANK
-
-Offline 
-
-Loading date...
-
----m 
-
-Today's Remaining Balance 00:00:00 
-
-1,440 Mins 
-
-Next -1m in 60s 
-
-100% of today left Resets at 24:00 Midnight 
-
-Spend 25m Now Budget Mins 
-
-MINUTE OVERDRAFT WARNING!
-
-You have scheduled more minutes than you have left before midnight. Adjust your task budgets!
-
-Daily 1440 Minute Ledger 
-
-Deposit: 1,440m 
-
-Elapsed Today 0m 
-
-Invested (Goals) 0m 
-
-Scheduled Left 0m 
-
-Unassigned Free 0m 
-
-Active Minute Commitments 
-
-Manage All → 
-
-Available to Budget 0 mins left 
-
-Total Planned Left 0 mins 
-
-Allocate Minutes to a Task 
-
-Minutes 
-
-Category 🎯 Dream Goal💼 Work💪 Health📚 Learning 
-
-Type Today OnlyDaily Fixed 
-
-+ Lock In Minute Budget 
-
-Daily Fixed Commitments 
-
-Non-negotiable minutes reserved every single day
-
-Today's Minute Schedule 
-
-One-time tasks budgeted from today's balance
-
-Investing Mode 
-
-Day Balance Left --- mins 
-
-🎯 DREAM GOAL 
-
-Select or Start a Minute Block
-
-25:00 Ready to invest 
-
-15m 25m 45m +5m 
-
-Start Investing Done 
-
-"Jab tum 1 minute apne sapne ko dete ho, woh minute kharch nahi hota—woh tumhare future mein invest ho jata hai." 
-
-Live Lockscreen Preview 
-
-How 1440 keeps you focused on your phone lockscreen
-
-Test Alert 
-
-12:45
-
-Lockscreen Active Guard
-
-1440 MINUTE BANK • ONGOING now 
-
-840 mins left today 
-
-Invested: 0m 
-
-Next: Deep Goal Work (90m) Don't waste a minute → 
-
-Minute Leak Tracker 
-
-Tap honestly if you wasted minutes today
-
-Efficiency Score 100% 
-
-+15m Leaked 📱 Reels / Scrolling +15m Leaked 🛋️ Procrastination +30m Leaked 💬 Unplanned Chat +20m Leaked 🌀 Overthinking 
-
-Total Leaked Today: 0 mins 
-
-Today's Minute Passbook 
-
-Reset Day 
-
-Creator Studio 
-
-AdMob Monetization & APK Preview
-
-Test how your app earns revenue via Google AdMob Banner (above bottom nav) and Rewarded Interstitial Ads when users complete daily goals. 
-
-Test AdMob Interstitial / Rewarded Ad 
-
-AdMob 1440 Pro Vault • Track & Monetize Your Focus 
-
-Open → 
-
-1440 Bank Schedule Focus Timer Lock & Audit 
-
-Saved! 
-
-Google AdMob Preview ✕ 
-
-Your AdMob Revenue Slot Ready!
-
-Jab user apna Focus Session poora karega ya Daily Report dekhega, tab yeh Interstitial/Rewarded Ad dikhega. Offline mode mein app bina ruke chalega, aur net on hote hi AdMob ads load karega. 
-
-Continue to 1440 App 
-
-const STORAGE_KEY = '1440_daily_minute_bank_v1'; let soundEnabled = true; let audioCtx = null; // Default Application State let appState = { dateKey: new Date().toDateString(), investedMinutes: 0, leakedMinutes: 0, fixedTasks: [ { id: 'fix_1', title: 'Build My Dream Goal', category: 'Dream Goal', minutes: 90, spent: 0, completed: false }, { id: 'fix_2', title: 'Health & Exercise', category: 'Health', minutes: 45, spent: 0, completed: false }, { id: 'fix_3', title: 'Skill / Deep Reading', category: 'Learning', minutes: 30, spent: 0, completed: false } ], todayTasks: [ { id: 'tod_1', title: 'Test 1440 App Features', category: 'Dream Goal', minutes: 25, spent: 0, completed: false } ], passbook: [ { time: 'Morning', text: '1,440 Minutes Deposited for Today', type: 'deposit', mins: 1440 } ] }; // Focus Timer State let focusTimer = { activeTaskId: null, activeTaskType: null, // 'fixed' | 'today' | 'quick' title: 'Deep Goal Sprint', category: '🎯 DREAM GOAL', totalSeconds: 25 * 60, remainingSeconds: 25 * 60, isRunning: false, intervalId: null }; // Initialize Web Audio API for crisp offline ticks & completion chimes function playSound(type) { if (!soundEnabled) return; try { if (!audioCtx) { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } if (audioCtx.state === 'suspended') { audioCtx.resume(); } const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain(); osc.connect(gain); gain.connect(audioCtx.destination); const now = audioCtx.currentTime; if (type === 'tick') { osc.frequency.setValueAtTime(800, now); gain.gain.setValueAtTime(0.015, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.03); osc.start(now); osc.stop(now + 0.03); } else if (type === 'success') { osc.frequency.setValueAtTime(523.25, now); // C5 osc.frequency.setValueAtTime(659.25, now + 0.1); // E5 osc.frequency.setValueAtTime(783.99, now + 0.2); // G5 gain.gain.setValueAtTime(0.08, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.45); osc.start(now); osc.stop(now + 0.45); } else if (type === 'leak') { osc.frequency.setValueAtTime(280, now); osc.frequency.setValueAtTime(190, now + 0.12); gain.gain.setValueAtTime(0.06, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3); osc.start(now); osc.stop(now + 0.3); } } catch (e) { // Ignore audio errors if user hasn't interacted yet } } function toggleSound() { soundEnabled = !soundEnabled; const icon = document.getElementById('soundIcon'); icon.className = soundEnabled ? 'fa-solid fa-volume-high text-xs text-amber-400' : 'fa-solid fa-volume-xmark text-xs text-slate-500'; showToast(soundEnabled ? 'Sound effects ON' : 'Sound effects Muted'); } // Load & Auto-Reset at Midnight function loadState() { try { const raw = localStorage.getItem(STORAGE_KEY); const todayStr = new Date().toDateString(); if (raw) { const parsed = JSON.parse(raw); // Check if day changed (Midnight Reset!) if (parsed.dateKey !== todayStr) { appState.dateKey = todayStr; appState.investedMinutes = 0; appState.leakedMinutes = 0; appState.fixedTasks = (parsed.fixedTasks || appState.fixedTasks).map(t => ({ ...t, spent: 0, completed: false })); appState.todayTasks = []; appState.passbook = [ { time: '00:00', text: 'Fresh 1,440 Minutes Deposited!', type: 'deposit', mins: 1440 } ]; saveState(); } else { appState = parsed; } } else { saveState(); } } catch (err) { console.error('LocalStorage load error:', err); } } function saveState() { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(appState)); } catch (err) { console.error('LocalStorage save error:', err); } } // Calculate Real-Time 1440 Metrics function get1440Metrics() { const now = new Date(); const hours = now.getHours(); const mins = now.getMinutes(); const secs = now.getSeconds(); const elapsedMinutes = (hours * 60) + mins; const remainingMinutes = 1440 - elapsedMinutes; const secondsLeftInCurrentMinute = 60 - secs; // Calculate remaining scheduled minutes across uncompleted fixed + today tasks let scheduledRemaining = 0; appState.fixedTasks.forEach(t => { if (!t.completed) { scheduledRemaining += Math.max(0, t.minutes - (t.spent || 0)); } }); appState.todayTasks.forEach(t => { if (!t.completed) { scheduledRemaining += Math.max(0, t.minutes - (t.spent || 0)); } }); const freeUnassigned = remainingMinutes - scheduledRemaining; return { now, elapsedMinutes, remainingMinutes, secondsLeftInCurrentMinute, scheduledRemaining, freeUnassigned }; } // Update Live Tick (runs every second) function updateLiveClockAndBank() { const m = get1440Metrics(); // Header date & time document.getElementById('headerDateText').textContent = m.now.toLocaleDateString('en-IN', { weekday: 'short', month: 'short', day: 'numeric' }); document.getElementById('liveClockDisplay').textContent = m.now.toLocaleTimeString('en-IN', { hour12: false }); document.getElementById('miniTopRemaining').textContent = `${m.remainingMinutes}m`; // Hero Vault Numbers document.getElementById('heroMinutesLeft').textContent = m.remainingMinutes.toLocaleString(); document.getElementById('heroSecondsLeft').textContent = `${String(m.secondsLeftInCurrentMinute).padStart(2, '0')}s`; // Current Minute 60-Second Depletion Bar const secPercent = (m.secondsLeftInCurrentMinute / 60) * 100; document.getElementById('currentMinuteBar').style.width = `${secPercent}%`; const dayLeftPct = ((m.remainingMinutes / 1440) * 100).toFixed(1); document.getElementById('dayPercentRemaining').textContent = `${dayLeftPct}% of today's 1,440m left`; // Ledger Cards document.getElementById('ledgerElapsed').textContent = `${m.elapsedMinutes}m`; document.getElementById('ledgerInvested').textContent = `${appState.investedMinutes}m`; document.getElementById('ledgerScheduled').textContent = `${m.scheduledRemaining}m`; const freeEl = document.getElementById('ledgerFree'); if (m.freeUnassigned < 0) { freeEl.textContent = `${m.freeUnassigned}m (Over!)`; freeEl.className = 'font-mono text-base font-bold text-rose-400'; document.getElementById('overdraftAlert').classList.remove('hidden'); } else { freeEl.textContent = `${m.freeUnassigned}m`; freeEl.className = 'font-mono text-base font-bold text-sky-400'; document.getElementById('overdraftAlert').classList.add('hidden'); } // Segmented Bar widths const unloggedElapsed = Math.max(0, m.elapsedMinutes - appState.investedMinutes - appState.leakedMinutes); document.getElementById('barElapsed').style.width = `${(unloggedElapsed / 1440) * 100}%`; document.getElementById('barInvested').style.width = `${(appState.investedMinutes / 1440) * 100}%`; document.getElementById('barLeaked').style.width = `${(appState.leakedMinutes / 1440) * 100}%`; document.getElementById('barScheduled').style.width = `${Math.min(100, (m.scheduledRemaining / 1440) * 100)}%`; // Budget Tab Header document.getElementById('budgetTabRemaining').textContent = `${m.remainingMinutes} mins left`; document.getElementById('budgetTabPlanned').textContent = `${m.scheduledRemaining} mins`; // Focus Tab Corner document.getElementById('focusCornerDayLeft').textContent = `${m.remainingMinutes} mins`; // Lockscreen Simulator Updates document.getElementById('lockscreenClock').textContent = m.now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }); document.getElementById('lockscreenMinsLeft').textContent = m.remainingMinutes; document.getElementById('lockscreenInvestedBadge').textContent = `Invested: ${appState.investedMinutes}m`; document.getElementById('lockscreenProgressBar').style.width = `${dayLeftPct}%`; const firstActive = [...appState.fixedTasks, ...appState.todayTasks].find(t => !t.completed); document.getElementById('lockscreenNextTask').textContent = firstActive ? `Active Goal: ${firstActive.title} (${firstActive.minutes}m)` : `All scheduled tasks completed!`; } // Render Tasks on Home, Fixed Commitments, and Today's Schedule function renderAllLists() { const homeList = document.getElementById('homeActiveTasksList'); const fixedList = document.getElementById('fixedTasksList'); const todayList = document.getElementById('todayTasksList'); // 1. Home Active Tasks (top 4 uncompleted) const activeCombined = [ ...appState.fixedTasks.map(t => ({ ...t, taskType: 'fixed' })), ...appState.todayTasks.map(t => ({ ...t, taskType: 'today' })) ].filter(t => !t.completed); if (activeCombined.length === 0) { homeList.innerHTML = ` <div class="text-center py-4 text-xs text-slate-400"> All commitments completed for today! Tap "Budget Mins" to allocate more. </div>`; } else { homeList.innerHTML = activeCombined.slice(0, 4).map(t => { const left = Math.max(0, t.minutes - (t.spent || 0)); return ` <div class="bg-obsidian/80 border border-slateBorder rounded-xl p-3 flex items-center justify-between gap-2"> <div class="min-w-0"> <div class="flex items-center gap-1.5"> <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slateCard text-amber-400 border border-slateBorder">${t.category}</span> ${t.taskType === 'fixed' ? '<span class="text-[10px] text-emerald font-semibold">• Daily Fixed</span>' : ''} </div> <p class="text-xs font-bold text-white truncate mt-1">${escapeHtml(t.title)}</p> <p class="text-[11px] font-mono text-slate-400">${t.spent || 0}m spent / ${t.minutes}m budget</p> </div> <button onclick="launchTaskFocus('${t.id}', '${t.taskType}')" class="shrink-0 px-3 py-2 rounded-xl bg-emerald/15 hover:bg-emerald/25 text-emerald border border-emerald/30 font-bold text-xs flex items-center gap-1.5 transition active:scale-95"> <i class="fa-solid fa-play text-[10px]"></i> ${left}m </button> </div>`; }).join(''); } // 2. Fixed Daily Commitments List fixedList.innerHTML = appState.fixedTasks.map(t => renderTaskCard(t, 'fixed')).join(''); // 3. Today's Tasks List if (appState.todayTasks.length === 0) { todayList.innerHTML = `<p class="text-xs text-slate-500 text-center py-3">No extra tasks scheduled today. Add one above!</p>`; } else { todayList.innerHTML = appState.todayTasks.map(t => renderTaskCard(t, 'today')).join(''); } // 4. Audit & Passbook document.getElementById('totalLeakedDisplay').textContent = `${appState.leakedMinutes} mins`; const totalAccounted = appState.investedMinutes + appState.leakedMinutes; const effScore = totalAccounted === 0 ? 100 : Math.round((appState.investedMinutes / totalAccounted) * 100); const effEl = document.getElementById('efficiencyScoreDisplay'); effEl.textContent = `${effScore}%`; effEl.className = `font-mono text-sm font-extrabold ${effScore >= 70 ? 'text-emerald' : effScore >= 40 ? 'text-amber-400' : 'text-rose-400'}`; const passbookEl = document.getElementById('passbookLogList'); passbookEl.innerHTML = appState.passbook.slice().reverse().map(item => { const badgeColor = item.type === 'invest' ? 'text-emerald' : item.type === 'leak' ? 'text-rose-400' : 'text-amber-400'; const sign = item.type === 'invest' ? '+' : item.type === 'leak' ? '-' : ''; return ` <div class="flex items-center justify-between bg-obsidian/70 px-3 py-2 rounded-lg border border-slateBorder/60 text-xs"> <div class="truncate pr-2"> <span class="text-[10px] font-mono text-slate-500 mr-1.5">${item.time}</span> <span class="text-slate-200">${escapeHtml(item.text)}</span> </div> <span class="font-mono font-bold ${badgeColor} shrink-0">${sign}${item.mins}m</span> </div>`; }).join(''); } function renderTaskCard(t, type) { const pct = Math.min(100, Math.round(((t.spent || 0) / t.minutes) * 100)); return ` <div class="bg-obsidian/90 border ${t.completed ? 'border-emerald/40 opacity-75' : 'border-slateBorder'} rounded-xl p-3 space-y-2"> <div class="flex items-start justify-between gap-2"> <div class="flex items-start gap-2.5 min-w-0"> <button onclick="toggleTaskComplete('${t.id}', '${type}')" class="mt-0.5 w-5 h-5 rounded-md border ${t.completed ? 'bg-emerald border-emerald text-obsidian' : 'border-slate-500 text-transparent'} flex items-center justify-center text-xs transition"> <i class="fa-solid fa-check"></i> </button> <div class="min-w-0"> <p class="text-xs font-bold ${t.completed ? 'line-through text-slate-400' : 'text-white'} truncate">${escapeHtml(t.title)}</p> <span class="text-[10px] text-slate-400 font-mono">${t.category} • ${t.spent || 0}/${t.minutes} mins</span> </div> </div> <div class="flex items-center gap-1.5 shrink-0"> ${!t.completed ? ` <button onclick="launchTaskFocus('${t.id}', '${type}')" class="px-2.5 py-1 rounded-lg bg-amber-500 text-obsidian font-extrabold text-[11px] flex items-center gap-1"> <i class="fa-solid fa-play text-[9px]"></i> Spend </button>` : ''} <button onclick="deleteTask('${t.id}', '${type}')" class="w-7 h-7 rounded-lg bg-slateCard text-slate-400 hover:text-rose-400 flex items-center justify-center text-xs"> <i class="fa-solid fa-trash-can"></i> </button> </div> </div> <div class="w-full h-1.5 bg-slateCard rounded-full overflow-hidden"> <div class="h-full bg-emerald transition-all" style="width: ${pct}%"></div> </div> </div>`; } // Add New Task or Daily Fixed Habit function addNewTask() { const titleInput = document.getElementById('newTaskTitle'); const minsInput = document.getElementById('newTaskMinutes'); const categoryInput = document.getElementById('newTaskCategory'); const typeInput = document.getElementById('newTaskType'); const title = titleInput.value.trim(); const minutes = parseInt(minsInput.value, 10); if (!title) { showToast('Please enter a task name first!'); return; } if (isNaN(minutes) || minutes < 1 || minutes > 1000) { showToast('Enter valid minutes between 1 and 1000'); return; } const newTask = { id: 'task_' + Date.now(), title, category: categoryInput.value, minutes, spent: 0, completed: false }; if (typeInput.value === 'fixed') { appState.fixedTasks.push(newTask); showToast(`Locked in "${title}" (${minutes}m) as a Daily Fixed Habit!`); } else { appState.todayTasks.push(newTask); showToast(`Budgeted ${minutes}m from today's balance for "${title}"!`); } titleInput.value = ''; playSound('success'); saveState(); updateLiveClockAndBank(); renderAllLists(); } function toggleTaskComplete(id, type) { const list = type === 'fixed' ? appState.fixedTasks : appState.todayTasks; const task = list.find(t => t.id === id); if (!task) return; task.completed = !task.completed; if (task.completed) { const unlogged = Math.max(0, task.minutes - (task.spent || 0)); if (unlogged > 0) { task.spent = task.minutes; appState.investedMinutes += unlogged; logPassbook(`Completed: ${task.title}`, 'invest', unlogged); } playSound('success'); showToast(`+${unlogged}m added to Invested Minutes!`); } saveState(); updateLiveClockAndBank(); renderAllLists(); } function deleteTask(id, type) { if (type === 'fixed') { appState.fixedTasks = appState.fixedTasks.filter(t => t.id !== id); } else { appState.todayTasks = appState.todayTasks.filter(t => t.id !== id); } saveState(); updateLiveClockAndBank(); renderAllLists(); showToast('Task removed from schedule'); } // Launch Focus Timer for a specific Task function launchTaskFocus(id, type) { const list = type === 'fixed' ? appState.fixedTasks : appState.todayTasks; const task = list.find(t => t.id === id); if (!task) return; pauseFocusTimer(); const remainingTaskMins = Math.max(5, task.minutes - (task.spent || 0)); focusTimer.activeTaskId = id; focusTimer.activeTaskType = type; focusTimer.title = task.title; focusTimer.category = task.category.toUpperCase(); focusTimer.totalSeconds = remainingTaskMins * 60; focusTimer.remainingSeconds = remainingTaskMins * 60; updateFocusUI(); switchTab('focus'); toggleFocusTimer(); } function startQuickFocus(mins, title) { pauseFocusTimer(); focusTimer.activeTaskId = null; focusTimer.activeTaskType = 'quick'; focusTimer.title = title; focusTimer.category = '⚡ QUICK FOCUS SPRINT'; focusTimer.totalSeconds = mins * 60; focusTimer.remainingSeconds = mins * 60; updateFocusUI(); switchTab('focus'); toggleFocusTimer(); } function setFocusDuration(mins) { pauseFocusTimer(); focusTimer.totalSeconds = mins * 60; focusTimer.remainingSeconds = mins * 60; updateFocusUI(); } function addFiveMinutesFocus() { focusTimer.totalSeconds += 300; focusTimer.remainingSeconds += 300; updateFocusUI(); showToast('+5 Minutes added to Focus Timer'); } function toggleFocusTimer() { if (focusTimer.isRunning) { pauseFocusTimer(); } else { focusTimer.isRunning = true; document.getElementById('focusPlayIcon').className = 'fa-solid fa-pause'; document.getElementById('focusPlayText').textContent = 'Pause Timer'; document.getElementById('focusTimerSubtext').textContent = 'Every minute is being invested...'; focusTimer.intervalId = setInterval(() => { if (focusTimer.remainingSeconds > 0) { focusTimer.remainingSeconds--; if (focusTimer.remainingSeconds % 60 === 0 && focusTimer.remainingSeconds !== focusTimer.totalSeconds) { // Log 1 invested minute automatically every 60 seconds! creditOneFocusedMinute(); } playSound('tick'); updateFocusUI(); } else { completeFocusSessionEarly(); } }, 1000); } } function pauseFocusTimer() { focusTimer.isRunning = false; if (focusTimer.intervalId) { clearInterval(focusTimer.intervalId); focusTimer.intervalId = null; } document.getElementById('focusPlayIcon').className = 'fa-solid fa-play'; document.getElementById('focusPlayText').textContent = 'Resume Investing'; document.getElementById('focusTimerSubtext').textContent = 'Timer Paused'; } function creditOneFocusedMinute() { appState.investedMinutes += 1; if (focusTimer.activeTaskId) { const list = focusTimer.activeTaskType === 'fixed' ? appState.fixedTasks : appState.todayTasks; const task = list.find(t => t.id === focusTimer.activeTaskId); if (task) { task.spent = (task.spent || 0) + 1; if (task.spent >= task.minutes) { task.completed = true; } } } saveState(); updateLiveClockAndBank(); renderAllLists(); } function completeFocusSessionEarly() { const elapsedSecs = focusTimer.totalSeconds - focusTimer.remainingSeconds; const extraMins = Math.max(1, Math.round(elapsedSecs / 60)); pauseFocusTimer(); appState.investedMinutes += extraMins; if (focusTimer.activeTaskId) { const list = focusTimer.activeTaskType === 'fixed' ? appState.fixedTasks : appState.todayTasks; const task = list.find(t => t.id === focusTimer.activeTaskId); if (task) { task.spent = (task.spent || 0) + extraMins; if (task.spent >= task.minutes) task.completed = true; } } logPassbook(`Invested in: ${focusTimer.title}`, 'invest', extraMins); focusTimer.remainingSeconds = focusTimer.totalSeconds; updateFocusUI(); playSound('success'); saveState(); updateLiveClockAndBank(); renderAllLists(); showToast(`Awesome! +${extraMins}m logged into Invested Balance!`); } function updateFocusUI() { document.getElementById('focusTaskTitle').textContent = focusTimer.title; document.getElementById('focusTaskCategory').textContent = focusTimer.category; const mins = Math.floor(focusTimer.remainingSeconds / 60); const secs = focusTimer.remainingSeconds % 60; document.getElementById('focusTimerDisplay').textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`; const circumference = 326.72; const fraction = focusTimer.totalSeconds > 0 ? focusTimer.remainingSeconds / focusTimer.totalSeconds : 0; const offset = circumference - (fraction * circumference); document.getElementById('focusRingCircle').style.strokeDashoffset = offset; } // Log Wasted / Leaked Minutes function logMinuteLeak(mins, reason) { appState.leakedMinutes += mins; logPassbook(`Leak: ${reason}`, 'leak', mins); playSound('leak'); saveState(); updateLiveClockAndBank(); renderAllLists(); showToast(`Logged -${mins}m leak (${reason}). Reclaim your next minute!`); } function logPassbook(text, type, mins) { const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }); appState.passbook.push({ time: nowStr, text, type, mins }); } function resetTodayDataPrompt() { appState.investedMinutes = 0; appState.leakedMinutes = 0; appState.fixedTasks.forEach(t => { t.spent = 0; t.completed = false; }); appState.todayTasks.forEach(t => { t.spent = 0; t.completed = false; }); appState.passbook = [{ time: 'Reset', text: '1,440 Daily Ledger Reset', type: 'deposit', mins: 1440 }]; saveState(); updateLiveClockAndBank(); renderAllLists(); showToast('Today\'s ledger has been reset!'); } // Trigger Real Phone Browser Notification if supported function triggerRealNotification() { const m = get1440Metrics(); if ('Notification' in window) { Notification.requestPermission().then(perm => { if (perm === 'granted') { new Notification(`⏳ ${m.remainingMinutes} Minutes Left Today!`, { body: `Invested: ${appState.investedMinutes}m | Scheduled Left: ${m.scheduledRemaining}m. Spend your next minute wisely!` }); showToast('Live Notification sent to your device!'); } else { showToast(`Lockscreen Alert Preview: ${m.remainingMinutes} mins remaining today!`); } }).catch(() => { showToast(`Lockscreen Guard Active: ${m.remainingMinutes} mins left today!`); }); } else { showToast(`Lockscreen Guard Active: ${m.remainingMinutes} mins left today!`); } } // AdMob Simulation Controls function toggleAdMobBanner() { const checked = document.getElementById('admobToggle').checked; const slot = document.getElementById('admobBannerSlot'); slot.style.display = checked ? 'flex' : 'none'; showToast(checked ? 'AdMob Bottom Banner Enabled' : 'AdMob Banner Hidden'); } function showSimulatedInterstitialAd() { const modal = document.getElementById('admobModal'); modal.classList.remove('hidden'); modal.classList.add('flex'); } function closeAdMobModal() { const modal = document.getElementById('admobModal'); modal.classList.add('hidden'); modal.classList.remove('flex'); } // Navigation Switcher function switchTab(tabName) { ['bank', 'budget', 'focus', 'audit'].forEach(t => { document.getElementById(`tab-${t}`).classList.add('hidden'); const btn = document.getElementById(`nav-${t}`); btn.classList.remove('text-amber-400'); btn.classList.add('text-slate-400'); }); document.getElementById(`tab-${tabName}`).classList.remove('hidden'); const activeBtn = document.getElementById(`nav-${tabName}`); activeBtn.classList.remove('text-slate-400'); activeBtn.classList.add('text-amber-400'); } // Custom Toast Helper let toastTimeout = null; function showToast(msg) { const box = document.getElementById('toastBox'); document.getElementById('toastText').textContent = msg; box.classList.remove('hidden'); if (toastTimeout) clearTimeout(toastTimeout); toastTimeout = setTimeout(() => { box.classList.add('hidden'); }, 2600); } function escapeHtml(str) { return String(str).replace(/[&<>"']/g, s => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[s])); } // Boot App on Load window.onload = function () { loadState(); updateLiveClockAndBank(); renderAllLists(); updateFocusUI(); setInterval(updateLiveClockAndBank, 1000); }; 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>1440 — The Daily Minute Bank</title>
+  <style>
+    :root {
+      --bg-main: #050608;
+      --bg-card: #12151E;
+      --bg-card-soft: #171B26;
+      --border: #1E2330;
+      --text-main: #F8FAFC;
+      --text-muted: #94A3B8;
+      --text-dim: #64748B;
+      --gold: #F59E0B;
+      --gold-light: #FBBF24;
+      --emerald: #10B981;
+      --rose: #F43F5E;
+      --sky: #38BDF8;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    body {
+      background-color: var(--bg-main);
+      color: var(--text-main);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+      padding-bottom: 130px;
+    }
+
+    .mono {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Courier New", monospace;
+    }
+
+    /* App Container */
+    .app-shell {
+      max-width: 440px;
+      margin: 0 auto;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Top Header */
+    .top-header {
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      background: rgba(9, 10, 15, 0.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .brand-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-logo {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: rgba(245, 158, 11, 0.14);
+      border: 1px solid rgba(245, 158, 11, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--gold-light);
+      font-weight: 900;
+      font-size: 11px;
+    }
+
+    .brand-title {
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .badge-offline {
+      font-size: 9px;
+      padding: 2px 6px;
+      border-radius: 99px;
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--emerald);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .header-sub {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .icon-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--gold-light);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .mini-pill {
+      padding: 5px 10px;
+      border-radius: 8px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--gold-light);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    /* Main Content Padding */
+    .main-area {
+      padding: 16px;
+      flex: 1;
+    }
+
+    .tab-section {
+      display: none;
+       flex-direction: column;
+      gap: 16px;
+    }
+
+    .tab-section.active {
+      display: flex;
+    }
+
+    /* Cards */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 16px;
+    }
+
+    .vault-card {
+      background: linear-gradient(145deg, #161A26 0%, #090A0F 100%);
+      border: 1px solid rgba(245, 158, 11, 0.35);
+      border-radius: 24px;
+      padding: 20px;
+      box-shadow: 0 0 30px rgba(245, 158, 11, 0.14);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .row-between {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .label-up {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      color: rgba(251, 191, 36, 0.85);
+    }
+
+    .clock-pill {
+      font-size: 11px;
+      color: var(--text-muted);
+      background: rgba(255, 255, 255, 0.05);
+      padding: 3px 8px;
+      border-radius: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .hero-balance {
+      margin: 14px 0 6px 0;
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+    }
+
+    .hero-number {
+      font-size: 56px;
+      font-weight: 900;
+      line-height: 1;
+      letter-spacing: -2px;
+      color: #FFFFFF;
+    }
+
+    .hero-unit {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--gold-light);
+    }
+
+    .sec-badge {
+      margin-left: auto;
+      background: rgba(245, 158, 11, 0.15);
+      border: 1px solid rgba(245, 158, 11, 0.35);
+      padding: 4px 8px;
+      border-radius: 8px;
+      font-size: 11px;
+      color: var(--gold-light);
+      font-weight: 700;
+    }
+
+    /* Progress Bars */
+    .bar-track {
+      width: 100%;
+      height: 8px;
+      background: rgba(255, 255, 255, 0.07);
+      border-radius: 99px;
+      overflow: hidden;
+      margin: 10px 0 6px 0;
+    }
+
+    .bar-fill-gold {
+      height: 100%;
+      background: linear-gradient(90deg, #F59E0B, #FDE047);
+      border-radius: 99px;
+      transition: width 0.5s linear;
+    }
+
+    .sub-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    /* Buttons */
+    .btn-grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .btn {
+      border: none;
+      border-radius: 12px;
+      padding: 11px 14px;
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: transform 0.1s;
+    }
+
+    .btn:active {
+      transform: scale(0.97);
+    }
+
+    .btn-gold {
+      background: var(--gold);
+      color: #050608;
+    }
+
+    .btn-dark {
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text-main);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    .btn-emerald {
+      background: rgba(16, 185, 129, 0.16);
+      color: var(--emerald);
+      border: 1px solid rgba(16, 185, 129, 0.35);
+    }
+
+    /* Alert Box */
+    .overdraft-box {
+      display: none;
+      background: rgba(244, 63, 94, 0.14);
+      border: 1px solid rgba(244, 63, 94, 0.4);
+      border-radius: 16px;
+      padding: 12px;
+      color: #FDA4AF;
+      font-size: 12px;
+      gap: 10px;
+      align-items: flex-start;
+    }
+
+    .overdraft-box.show {
+      display: flex;
+    }
+
+    /* Ledger Grid */
+    .ledger-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .stat-box {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 14px;
+      padding: 10px 12px;
+    }
+
+    .stat-label {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .stat-val {
+      font-size: 17px;
+      font-weight: 800;
+      margin-top: 3px;
+    }
+
+    .multi-bar {
+      height: 10px;
+      width: 100%;
+      background: #0B0D13;
+      border-radius: 99px;
+      overflow: hidden;
+      display: flex;
+      margin-top: 10px;
+    }
+
+    /* Task Items */
+    .task-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .task-item {
+      background: var(--bg-card-soft);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .task-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .check-circle {
+      width: 22px;
+      height: 22px;
+      border-radius: 7px;
+      border: 2px solid var(--text-dim);
+      background: transparent;
+      color: #050608;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 900;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .check-circle.done {
+      background: var(--emerald);
+      border-color: var(--emerald);
+    }
+
+    .task-title {
+      font-size: 14px;
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .task-title.done {
+      text-decoration: line-through;
+      color: var(--text-dim);
+    }
+
+    .task-meta {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .mini-spend-btn {
+      background: rgba(245, 158, 11, 0.16);
+      border: 1px solid rgba(245, 158, 11, 0.35);
+      color: var(--gold-light);
+      padding: 6px 10px;
+      border-radius: 10px;
+      font-size: 11px;
+      font-weight: 800;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .del-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-dim);
+      font-size: 14px;
+      padding: 4px 6px;
+      cursor: pointer;
+    }
+
+    /* Form Controls */
+    .input-field, .select-field {
+      width: 100%;
+      background: #090A0F;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 11px 12px;
+      color: var(--text-main);
+      font-size: 13px;
+      outline: none;
+      margin-top: 4px;
+    }
+
+    .input-field:focus, .select-field:focus {
+      border-color: var(--gold);
+    }
+
+    .form-grid-3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
+      margin: 10px 0 12px 0;
+    }
+
+    .field-label {
+      font-size: 10px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+
+    /* Focus Ring */
+    .focus-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      padding: 20px 16px;
+    }
+
+    .ring-box {
+      position: relative;
+      width: 220px;
+      height: 220px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 16px 0;
+    }
+
+    .ring-svg {
+      width: 100%;
+      height: 100%;
+      transform: rotate(-90deg);
+    }
+
+    .ring-center {
+      position: absolute;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .timer-big {
+      font-size: 46px;
+      font-weight: 900;
+      letter-spacing: -1px;
+    }
+
+    .preset-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .chip-btn {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 6px 12px;
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    /* Lockscreen Preview */
+    .lock-screen-mock {
+      background: linear-gradient(180deg, #0F172A 0%, #050608 100%);
+      border: 1px solid #334155;
+      border-radius: 22px;
+      padding: 16px;
+      margin-top: 10px;
+    }
+
+    .lock-notif {
+      background: rgba(18, 21, 30, 0.95);
+      border: 1px solid rgba(245, 158, 11, 0.4);
+      border-radius: 16px;
+      padding: 12px;
+      margin-top: 10px;
+    }
+
+    /* Leak Grid */
+    .leak-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin: 12px 0;
+    }
+
+    .leak-btn {
+      background: rgba(244, 63, 94, 0.08);
+      border: 1px solid rgba(244, 63, 94, 0.25);
+      border-radius: 12px;
+      padding: 10px;
+      text-align: left;
+      color: var(--text-main);
+      cursor: pointer;
+    }
+
+    /* AdMob Banner & Bottom Nav */
+    .admob-banner {
+      position: fixed;
+      bottom: 64px;
+      left: 0;
+      right: 0;
+      max-width: 440px;
+      margin: 0 auto;
+      background: #0D1017;
+      border-top: 1px solid var(--border);
+      padding: 6px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      z-index: 35;
+    }
+
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      max-width: 440px;
+      margin: 0 auto;
+      height: 64px;
+      background: rgba(9, 10, 15, 0.96);
+      border-top: 1px solid var(--border);
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      z-index: 40;
+    }
+
+    .nav-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-dim);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      font-size: 10px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .nav-btn.active {
+      color: var(--gold-light);
+    }
+
+    .nav-icon {
+      font-size: 16px;
+    }
+
+    /* Toast & Modal */
+    .toast {
+      position: fixed;
+      top: 68px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #1E293B;
+      border: 1px solid rgba(245, 158, 11, 0.5);
+      color: #FFF;
+      padding: 8px 16px;
+      border-radius: 99px;
+      font-size: 12px;
+      font-weight: 700;
+      z-index: 100;
+      display: none;
+      box-shadow: 0 8px 25px rgba(0,0,0,0.5);
+      white-space: nowrap;
+    }
+
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.85);
+      z-index: 90;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .modal-card {
+      background: var(--bg-card);
+      border: 1px solid rgba(245, 158, 11, 0.4);
+      border-radius: 24px;
+      padding: 24px;
+      max-width: 340px;
+      width: 100%;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <!-- TOP BAR -->
+    <header class="top-header">
+      <div class="brand-row">
+        <div class="brand-logo mono">1440</div>
+        <div>
+          <div class="brand-title">
+            1440 MINUTE BANK
+            <span class="badge-offline">Offline</span>
+          </div>
+          <div id="headerDateText" class="header-sub">Loading today...</div>
+        </div>
+      </div>
+      <div class="header-right">
+        <button class="icon-btn" onclick="toggleSound()" id="soundBtn">🔊</button>
+        <div class="mini-pill mono" id="miniTopRemaining">---m</div>
+      </div>
+    </header>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-area">
+      <!-- TAB 1: 1440 VAULT -->
+      <section id="tab-bank" class="tab-section active">
+        <div class="vault-card">
+          <div class="row-between">
+            <span class="label-up">⏳ Today's Remaining Balance</span>
+            <span id="liveClockDisplay" class="clock-pill mono">00:00:00</span>
+          </div>
+
+          <div class="hero-balance">
+            <span id="heroMinutesLeft" class="hero-number mono">1,440</span>
+            <span class="hero-unit">Mins</span>
+            <span class="sec-badge mono">Next -1m in <span id="heroSecondsLeft">60s</span></span>
+          </div>
+
+          <div class="bar-track">
+            <div id="currentMinuteBar" class="bar-fill-gold" style="width: 100%;"></div>
+          </div>
+
+          <div class="sub-row">
+            <span id="dayPercentRemaining">100% of today left</span>
+            <span class="mono">Resets at 24:00 Midnight</span>
+          </div>
+
+          <div class="btn-grid-2">
+            <button class="btn btn-gold" onclick="startQuickFocus(25, 'Deep Goal Sprint')">⚡ Spend 25m Now</button>
+            <button class="btn btn-dark" onclick="switchTab('budget')">➕ Budget Mins</button>
+          </div>
+        </div>
+
+        <!-- OVERDRAFT WARNING -->
+        <div id="overdraftAlert" class="overdraft-box">
+          <span>⚠️</span>
+          <div>
+            <strong>MINUTE OVERDRAFT WARNING!</strong><br/>
+            Tune bache hue minutes se zyada ka task schedule kar liya hai. Apna budget adjust kar!
+          </div>
+        </div>
+
+        <!-- DAILY LEDGER -->
+        <div class="card">
+          <div class="row-between">
+            <span style="font-size:12px; font-weight:800; color:var(--text-muted);">DAILY 1440 MINUTE LEDGER</span>
+            <span class="mono" style="font-size:11px; color:var(--text-dim);">Deposit: 1,440m</span>
+          </div>
+
+          <div class="multi-bar">
+            <div id="barElapsed" style="background:#475569; width:0%;"></div>
+            <div id="barInvested" style="background:#10B981; width:0%;"></div>
+            <div id="barLeaked" style="background:#F43F5E; width:0%;"></div>
+            <div id="barScheduled" style="background:#F59E0B; width:0%;"></div>
+          </div>
+
+          <div class="ledger-grid">
+            <div class="stat-box">
+              <div class="stat-label">Elapsed Today</div>
+              <div id="ledgerElapsed" class="stat-val mono">0m</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-label" style="color:var(--emerald);">Invested (Goals)</div>
+              <div id="ledgerInvested" class="stat-val mono" style="color:var(--emerald);">0m</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-label" style="color:var(--gold-light);">Scheduled Left</div>
+              <div id="ledgerScheduled" class="stat-val mono" style="color:var(--gold-light);">0m</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-label" style="color:var(--sky);">Unassigned Free</div>
+              <div id="ledgerFree" class="stat-val mono" style="color:var(--sky);">0m</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ACTIVE COMMITMENTS -->
+        <div class="card">
+          <div class="row-between">
+            <span style="font-size:14px; font-weight:800;">⚡ Active Minute Commitments</span>
+            <span onclick="switchTab('budget')" style="font-size:12px; color:var(--gold-light); font-weight:700; cursor:pointer;">Manage All →</span>
+          </div>
+          <div id="homeActiveTasksList" class="task-list"></div>
+        </div>
+      </section>
+
+      <!-- TAB 2: SCHEDULE & FIXED HABITS -->
+      <section id="tab-budget" class="tab-section">
+        <div class="card row-between">
+          <div>
+            <div class="field-label">Available to Budget</div>
+            <div id="budgetTabRemaining" class="mono" style="font-size:20px; font-weight:900; color:var(--gold-light);">0 mins left</div>
+          </div>
+          <div style="text-align:right;">
+            <div class="field-label">Total Planned Left</div>
+            <div id="budgetTabPlanned" class="mono" style="font-size:20px; font-weight:900; color:var(--emerald);">0 mins</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div style="font-size:13px; font-weight:800; color:var(--gold-light); margin-bottom:8px;">➕ Allocate Minutes to a Task</div>
+          <input id="newTaskTitle" type="text" class="input-field" placeholder="e.g., Coding, Gym, Study, Side Hustle..." />
+          <div class="form-grid-3">
+            <div>
+              <div class="field-label">Minutes</div>
+              <input id="newTaskMinutes" type="number" value="30" min="5" max="720" class="input-field mono" />
+            </div>
+            <div>
+              <div class="field-label">Category</div>
+              <select id="newTaskCategory" class="select-field">
+                <option value="Dream Goal">🎯 Goal</option>
+                <option value="Work">💼 Work</option>
+                <option value="Health">💪 Health</option>
+                <option value="Learning">📚 Learn</option>
+              </select>
+            </div>
+            <div>
+              <div class="field-label">Type</div>
+              <select id="newTaskType" class="select-field">
+                <option value="today">Today</option>
+                <option value="fixed">Daily Fix</option>
+              </select>
+            </div>
+          </div>
+          <button class="btn btn-gold" style="width:100%;" onclick="addNewTask()">+ Lock In Minute Budget</button>
+        </div>
+
+        <div class="card">
+          <div style="font-size:14px; font-weight:800;">🔁 Daily Fixed Commitments</div>
+          <div style="font-size:11px; color:var(--text-muted);">Roz ke pakke minutes jo har din tere sapne ko jayenge</div>
+          <div id="fixedTasksList" class="task-list"></div>
+        </div>
+
+        <div class="card">
+          <div style="font-size:14px; font-weight:800;">📅 Today's Minute Schedule</div>
+          <div style="font-size:11px; color:var(--text-muted);">Aaj ke bache hue balance se diye gaye tasks</div>
+          <div id="todayTasksList" class="task-list"></div>
+        </div>
+      </section>
+
+      <!-- TAB 3: FOCUS TIMER -->
+      <section id="tab-focus" class="tab-section">
+        <div class="card focus-wrap">
+          <div class="row-between" style="width:100%;">
+            <span class="field-label">Investing Mode</span>
+            <span class="mono" style="font-size:12px; color:var(--gold-light);">Balance: <span id="focusCornerDayLeft">---m</span></span>
+          </div>
+
+          <div id="focusTaskCategory" style="margin-top:12px; font-size:11px; font-weight:800; color:var(--gold-light);">🎯 DREAM GOAL</div>
+          <div id="focusTaskTitle" style="font-size:18px; font-weight:900; margin-top:4px;">Select or Start a Minute Block</div>
+
+          <div class="ring-box">
+            <svg class="ring-svg" viewBox="0 0 120 120">
+              <circle cx="60" cy="60" r="52" stroke="#1E2330" stroke-width="8" fill="none"></circle>
+              <circle id="focusRingCircle" cx="60" cy="60" r="52" stroke="#F59E0B" stroke-width="8" fill="none" stroke-linecap="round" stroke-dasharray="326.72" stroke-dashoffset="0"></circle>
+            </svg>
+            <div class="ring-center">
+              <div id="focusTimerDisplay" class="timer-big mono">25:00</div>
+              <div id="focusTimerSubtext" style="font-size:11px; color:var(--text-muted); margin-top:4px;">Ready to invest</div>
+            </div>
+          </div>
+
+          <div class="preset-row">
+            <button class="chip-btn mono" onclick="setFocusDuration(15)">15m</button>
+            <button class="chip-btn mono" onclick="setFocusDuration(25)">25m</button>
+            <button class="chip-btn mono" onclick="setFocusDuration(45)">45m</button>
+            <button class="chip-btn mono" onclick="addFiveMinutesFocus()" style="color:var(--gold-light);">+5m</button>
+          </div>
+
+          <div class="btn-grid-2" style="width:100%;">
+            <button class="btn btn-gold" onclick="toggleFocusTimer()">
+              <span id="focusPlayText">▶ Start Investing</span>
+            </button>
+            <button class="btn btn-emerald" onclick="completeFocusSessionEarly()">✔ Done</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 4: LOCKSCREEN & AUDIT -->
+      <section id="tab-audit" class="tab-section">
+        <div class="card">
+          <div class="row-between">
+            <div>
+              <div style="font-size:14px; font-weight:800;">📱 Live Lockscreen Guard</div>
+              <div style="font-size:11px; color:var(--text-muted);">Lockscreen par bache hue minutes ka live alert</div>
+            </div>
+            <button class="mini-spend-btn" onclick="triggerRealNotification()">🔔 Test Alert</button>
+          </div>
+
+          <div class="lock-screen-mock">
+            <div style="text-align:center;">
+              <div id="lockscreenClock" class="mono" style="font-size:32px; font-weight:300;">12:45</div>
+              <div style="font-size:10px; color:var(--text-muted); text-transform:uppercase;">Lockscreen Active Guard</div>
+            </div>
+            <div class="lock-notif">
+              <div class="row-between" style="font-size:10px; color:var(--gold-light); font-weight:800;">
+                <span>⏳ 1440 MINUTE BANK • ONGOING</span>
+                <span>now</span>
+              </div>
+              <div class="row-between" style="margin-top:6px;">
+                <span style="font-size:15px; font-weight:900;"><span id="lockscreenMinsLeft" class="mono">840</span> mins left today</span>
+                <span id="lockscreenInvestedBadge" class="mono" style="font-size:11px; color:var(--emerald);">Invested: 0m</span>
+              </div>
+              <div class="bar-track" style="height:5px; margin:6px 0;">
+                <div id="lockscreenProgressBar" class="bar-fill-gold" style="width:55%;"></div>
+              </div>
+              <div id="lockscreenNextTask" style="font-size:11px; color:var(--text-muted);">Next: Build My Dream Goal</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="row-between">
+            <div>
+              <div style="font-size:14px; font-weight:800;">🩸 Minute Leak Tracker</div>
+              <div style="font-size:11px; color:var(--text-muted);">Imaandari se tap kar agar aaj minutes waste hue</div>
+            </div>
+            <div style="text-align:right;">
+              <div class="field-label">Efficiency</div>
+              <div id="efficiencyScoreDisplay" class="mono" style="font-size:16px; font-weight:900; color:var(--emerald);">100%</div>
+            </div>
+          </div>
+
+          <div class="leak-grid">
+            <button class="leak-btn" onclick="logMinuteLeak(15, 'Reels / Scrolling')">
+              <div class="mono" style="font-size:12px; font-weight:800; color:var(--rose);">+15m Leaked</div>
+              <div style="font-size:11px; color:var(--text-muted);">📱 Reels / Shorts</div>
+            </button>
+            <button class="leak-btn" onclick="logMinuteLeak(15, 'Procrastination')">
+              <div class="mono" style="font-size:12px; font-weight:800; color:var(--rose);">+15m Leaked</div>
+              <div style="font-size:11px; color:var(--text-muted);">🛋️ Procrastination</div>
+            </button>
+            <button class="leak-btn" onclick="logMinuteLeak(30, 'Unplanned Chat')">
+              <div class="mono" style="font-size:12px; font-weight:800; color:var(--rose);">+30m Leaked</div>
+              <div style="font-size:11px; color:var(--text-muted);">💬 Timepass Chat</div>
+            </button>
+            <button class="leak-btn" onclick="logMinuteLeak(20, 'Overthinking')">
+              <div class="mono" style="font-size:12px; font-weight:800; color:var(--rose);">+20m Leaked</div>
+              <div style="font-size:11px; color:var(--text-muted);">🌀 Overthinking</div>
+            </button>
+          </div>
+
+          <div class="row-between" style="font-size:12px; padding-top:6px; border-top:1px solid var(--border);">
+            <span style="color:var(--text-muted);">Total Wasted Today:</span>
+            <span id="totalLeakedDisplay" class="mono" style="font-weight:800; color:var(--rose);">0 mins</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="row-between" style="margin-bottom:8px;">
+            <span style="font-size:14px; font-weight:800;">📒 Today's Minute Passbook</span>
+            <button class="del-btn" onclick="resetTodayDataPrompt()" style="font-size:11px; color:var(--text-muted);">Reset Day</button>
+          </div>
+          <div id="passbookLogList" class="task-list"></div>
+        </div>
+
+        <div class="card" style="border-color:rgba(245,158,11,0.35);">
+          <div style="font-size:13px; font-weight:800; color:var(--gold-light);">💰 Creator Studio: AdMob Revenue Preview</div>
+          <div style="font-size:11px; color:var(--text-muted); margin:6px 0 12px 0;">
+            Test kar ki tera app AdMob Banner aur Fullscreen Rewarded Ad se kaise revenue generate karega.
+          </div>
+          <button class="btn btn-gold" style="width:100%;" onclick="showSimulatedInterstitialAd()">▶ Test Fullscreen AdMob Ad</button>
+        </div>
+      </section>
+    </main>
+
+    <!-- ADMOB BANNER SLOT -->
+    <div id="admobBannerSlot" class="admob-banner">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <span class="mono" style="font-size:9px; background:#1E293B; color:var(--gold-light); padding:2px 5px; border-radius:4px;">AdMob</span>
+        <span style="font-size:11px; color:var(--text-muted);">1440 Pro Vault • Make Every Minute Count</span>
+      </div>
+      <span onclick="showSimulatedInterstitialAd()" style="font-size:11px; color:var(--gold-light); font-weight:700; cursor:pointer;">Open →</span>
+    </div>
+
+    <!-- BOTTOM NAVIGATION -->
+    <nav class="bottom-nav">
+      <button id="nav-bank" class="nav-btn active" onclick="switchTab('bank')">
+        <span class="nav-icon">⏳</span>
+        <span>1440 Bank</span>
+      </button>
+      <button id="nav-budget" class="nav-btn" onclick="switchTab('budget')">
+        <span class="nav-icon">📋</span>
+        <span>Schedule</span>
+      </button>
+      <button id="nav-focus" class="nav-btn" onclick="switchTab('focus')">
+        <span class="nav-icon">🔥</span>
+        <span>Focus Timer</span>
+      </button>
+      <button id="nav-audit" class="nav-btn" onclick="switchTab('audit')">
+        <span class="nav-icon">🛡️</span>
+        <span>Lock & Ads</span>
+      </button>
+    </nav>
+  </div>
+
+  <!-- TOAST -->
+  <div id="toastBox" class="toast">Saved!</div>
+
+  <!-- ADMOB INTERSTITIAL MODAL -->
+  <div id="admobModal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="mono" style="font-size:10px; color:var(--gold-light); margin-bottom:8px;">GOOGLE ADMOB INTERSTITIAL PREVIEW</div>
+      <div style="font-size:20px; font-weight:900; margin-bottom:8px;">💰 Revenue Slot Ready!</div>
+      <p style="font-size:12px; color:var(--text-muted); line-height:1.5; margin-bottom:16px;">
+        Jab user apna Focus Session poora karega, tab yeh Ad dikhega. Offline mode mein app bina ruke chalega, aur net on hote hi AdMob ads dikha kar earning shuru kar dega!
+      </p>
+      <button class="btn btn-gold" style="width:100%;" onclick="closeAdMobModal()">Continue to 1440 App</button>
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = '1440_daily_minute_bank_v2';
+    let soundEnabled = true;
+    let audioCtx = null;
+
+    let appState = {
+      dateKey: new Date().toDateString(),
+      investedMinutes: 0,
+      leakedMinutes: 0,
+      fixedTasks: [
+        { id: 'fix_1', title: 'Build My Dream Goal', category: 'Dream Goal', minutes: 90, spent: 0, completed: false },
+        { id: 'fix_2', title: 'Health & Exercise', category: 'Health', minutes: 45, spent: 0, completed: false },
+        { id: 'fix_3', title: 'Deep Skill Learning', category: 'Learning', minutes: 30, spent: 0, completed: false }
+      ],
+      todayTasks: [
+        { id: 'tod_1', title: 'Test 1440 APK on My Phone', category: 'Dream Goal', minutes: 25, spent: 0, completed: false }
+      ],
+      passbook: [
+        { time: '00:00', text: '1,440 Minutes Deposited for Today', type: 'deposit', mins: 1440 }
+      ]
+    };
+
+    let focusTimer = {
+      activeTaskId: null,
+      activeTaskType: null,
+      title: 'Deep Goal Sprint',
+      category: '🎯 DREAM GOAL',
+      totalSeconds: 25 * 60,
+      remainingSeconds: 25 * 60,
+      isRunning: false,
+      intervalId: null
+    };
+
+    function playSound(type) {
+      if (!soundEnabled) return;
+      try {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        const now = audioCtx.currentTime;
+        if (type === 'tick') {
+          osc.frequency.setValueAtTime(800, now);
+          gain.gain.setValueAtTime(0.015, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.03);
+          osc.start(now);
+          osc.stop(now + 0.03);
+        } else if (type === 'success') {
+          osc.frequency.setValueAtTime(523.25, now);
+          osc.frequency.setValueAtTime(659.25, now + 0.1);
+          osc.frequency.setValueAtTime(783.99, now + 0.2);
+          gain.gain.setValueAtTime(0.08, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
+          osc.start(now);
+          osc.stop(now + 0.45);
+        } else if (type === 'leak') {
+          osc.frequency.setValueAtTime(260, now);
+          osc.frequency.setValueAtTime(180, now + 0.12);
+          gain.gain.setValueAtTime(0.06, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+          osc.start(now);
+          osc.stop(now + 0.3);
+        }
+      } catch (e) {}
+    }
+
+    function toggleSound() {
+      soundEnabled = !soundEnabled;
+      document.getElementById('soundBtn').textContent = soundEnabled ? '🔊' : '🔇';
+      showToast(soundEnabled ? 'Sound ON' : 'Sound Muted');
+    }
+
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        const todayStr = new Date().toDateString();
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed.dateKey !== todayStr) {
+            appState.dateKey = todayStr;
+            appState.investedMinutes = 0;
+            appState.leakedMinutes = 0;
+            appState.fixedTasks = (parsed.fixedTasks || appState.fixedTasks).map(t => ({ ...t, spent: 0, completed: false }));
+            appState.todayTasks = [];
+            appState.passbook = [{ time: '00:00', text: 'Fresh 1,440 Minutes Deposited!', type: 'deposit', mins: 1440 }];
+            saveState();
+          } else {
+            appState = parsed;
+          }
+        } else {
+          saveState();
+        }
+      } catch (e) {}
+    }
+
+    function saveState() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+      } catch (e) {}
+    }
+
+    function get1440Metrics() {
+      const now = new Date();
+      const elapsedMinutes = (now.getHours() * 60) + now.getMinutes();
+      const remainingMinutes = 1440 - elapsedMinutes;
+      const secondsLeftInCurrentMinute = 60 - now.getSeconds();
+
+      let scheduledRemaining = 0;
+      appState.fixedTasks.forEach(t => {
+        if (!t.completed) scheduledRemaining += Math.max(0, t.minutes - (t.spent || 0));
+      });
+      appState.todayTasks.forEach(t => {
+        if (!t.completed) scheduledRemaining += Math.max(0, t.minutes - (t.spent || 0));
+      });
+
+      const freeUnassigned = remainingMinutes - scheduledRemaining;
+      return { now, elapsedMinutes, remainingMinutes, secondsLeftInCurrentMinute, scheduledRemaining, freeUnassigned };
+    }
+
+    function updateLiveClockAndBank() {
+      const m = get1440Metrics();
+      document.getElementById('headerDateText').textContent = m.now.toLocaleDateString('en-IN', { weekday: 'short', month: 'short', day: 'numeric' });
+      document.getElementById('liveClockDisplay').textContent = m.now.toLocaleTimeString('en-IN', { hour12: false });
+      document.getElementById('miniTopRemaining').textContent = m.remainingMinutes + 'm';
+
+      document.getElementById('heroMinutesLeft').textContent = m.remainingMinutes.toLocaleString();
+      document.getElementById('heroSecondsLeft').textContent = String(m.secondsLeftInCurrentMinute).padStart(2, '0') + 's';
+      document.getElementById('currentMinuteBar').style.width = ((m.secondsLeftInCurrentMinute / 60) * 100) + '%';
+
+      const dayLeftPct = ((m.remainingMinutes / 1440) * 100).toFixed(1);
+      document.getElementById('dayPercentRemaining').textContent = dayLeftPct + '% of today left';
+
+      document.getElementById('ledgerElapsed').textContent = m.elapsedMinutes + 'm';
+      document.getElementById('ledgerInvested').textContent = appState.investedMinutes + 'm';
+      document.getElementById('ledgerScheduled').textContent = m.scheduledRemaining + 'm';
+
+      const freeEl = document.getElementById('ledgerFree');
+      const alertBox = document.getElementById('overdraftAlert');
+      if (m.freeUnassigned < 0) {
+        freeEl.textContent = m.freeUnassigned + 'm (Over!)';
+        freeEl.style.color = 'var(--rose)';
+        alertBox.classList.add('show');
+      } else {
+        freeEl.textContent = m.freeUnassigned + 'm';
+        freeEl.style.color = 'var(--sky)';
+        alertBox.classList.remove('show');
+      }
+
+      const unloggedElapsed = Math.max(0, m.elapsedMinutes - appState.investedMinutes - appState.leakedMinutes);
+      document.getElementById('barElapsed').style.width = ((unloggedElapsed / 1440) * 100) + '%';
+      document.getElementById('barInvested').style.width = ((appState.investedMinutes / 1440) * 100) + '%';
+      document.getElementById('barLeaked').style.width = ((appState.leakedMinutes / 1440) * 100) + '%';
+      document.getElementById('barScheduled').style.width = Math.min(100, (m.scheduledRemaining / 1440) * 100) + '%';
+
+      document.getElementById('budgetTabRemaining').textContent = m.remainingMinutes + ' mins left';
+      document.getElementById('budgetTabPlanned').textContent = m.scheduledRemaining + ' mins';
+      document.getElementById('focusCornerDayLeft').textContent = m.remainingMinutes + 'm';
+
+      document.getElementById('lockscreenClock').textContent = m.now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+      document.getElementById('lockscreenMinsLeft').textContent = m.remainingMinutes;
+      document.getElementById('lockscreenInvestedBadge').textContent = 'Invested: ' + appState.investedMinutes + 'm';
+      document.getElementById('lockscreenProgressBar').style.width = dayLeftPct + '%';
+
+      const firstActive = [...appState.fixedTasks, ...appState.todayTasks].find(t => !t.completed);
+      document.getElementById('lockscreenNextTask').textContent = firstActive
+        ? 'Active Goal: ' + firstActive.title + ' (' + firstActive.minutes + 'm)'
+        : 'All scheduled tasks completed!';
+    }
+
+    function renderAllLists() {
+      const homeList = document.getElementById('homeActiveTasksList');
+      const fixedList = document.getElementById('fixedTasksList');
+      const todayList = document.getElementById('todayTasksList');
+
+      const activeCombined = [
+        ...appState.fixedTasks.map(t => ({ ...t, taskType: 'fixed' })),
+        ...appState.todayTasks.map(t => ({ ...t, taskType: 'today' }))
+      ].filter(t => !t.completed);
+
+      if (activeCombined.length === 0) {
+        homeList.innerHTML = '<div style="font-size:12px; color:var(--text-muted); padding:8px 0;">Saare tasks poore ho gaye! "Budget Mins" mein jaakar naya task jodo.</div>';
+      } else {
+        homeList.innerHTML = activeCombined.slice(0, 4).map(t => {
+          const left = Math.max(0, t.minutes - (t.spent || 0));
+          return '<div class="task-item">' +
+            '<div class="task-left">' +
+              '<div>' +
+                '<div class="task-title">' + escapeHtml(t.title) + '</div>' +
+                '<div class="task-meta">' + t.category + ' • ' + (t.spent || 0) + 'm / ' + t.minutes + 'm</div>' +
+              '</div>' +
+            '</div>' +
+            '<button class="mini-spend-btn" onclick="launchTaskFocus(\'' + t.id + '\', \'' + t.taskType + '\')">▶ Spend ' + left + 'm</button>' +
+          '</div>';
+        }).join('');
+      }
+
+      fixedList.innerHTML = appState.fixedTasks.map(t => renderTaskCard(t, 'fixed')).join('');
+      todayList.innerHTML = appState.todayTasks.length === 0
+        ? '<div style="font-size:12px; color:var(--text-muted); padding:8px 0;">Aaj koi alag task nahi joda gaya hai.</div>'
+        : appState.todayTasks.map(t => renderTaskCard(t, 'today')).join('');
+
+      document.getElementById('totalLeakedDisplay').textContent = appState.leakedMinutes + ' mins';
+      const totalAccounted = appState.investedMinutes + appState.leakedMinutes;
+      const effScore = totalAccounted === 0 ? 100 : Math.round((appState.investedMinutes / totalAccounted) * 100);
+      document.getElementById('efficiencyScoreDisplay').textContent = effScore + '%';
+
+      const passbookEl = document.getElementById('passbookLogList');
+      passbookEl.innerHTML = appState.passbook.slice().reverse().map(item => {
+        const color = item.type === 'invest' ? 'var(--emerald)' : item.type === 'leak' ? 'var(--rose)' : 'var(--gold-light)';
+        const sign = item.type === 'invest' ? '+' : item.type === 'leak' ? '-' : '';
+        return '<div class="task-item" style="padding:9px 12px;">' +
+          '<div style="font-size:12px;"><strong>' + item.time + '</strong> • ' + escapeHtml(item.text) + '</div>' +
+          '<div class="mono" style="font-size:12px; font-weight:800; color:' + color + ';">' + sign + item.mins + 'm</div>' +
+        '</div>';
+      }).join('');
+    }
+
+    function renderTaskCard(t, type) {
+      return '<div class="task-item">' +
+        '<div class="task-left">' +
+          '<button class="check-circle ' + (t.completed ? 'done' : '') + '" onclick="toggleTaskComplete(\'' + t.id + '\', \'' + type + '\')">' + (t.completed ? '✓' : '') + '</button>' +
+          '<div>' +
+            '<div class="task-title ' + (t.completed ? 'done' : '') + '">' + escapeHtml(t.title) + '</div>' +
+            '<div class="task-meta">' + t.category + ' • ' + (t.spent || 0) + '/' + t.minutes + ' mins</div>' +
+          '</div>' +
+        '</div>' +
+        '<div style="display:flex; align-items:center; gap:6px;">' +
+          (!t.completed ? '<button class="mini-spend-btn" onclick="launchTaskFocus(\'' + t.id + '\', \'' + type + '\')">▶ Spend</button>' : '') +
+          '<button class="del-btn" onclick="deleteTask(\'' + t.id + '\', \'' + type + '\')">✕</button>' +
+        '</div>' +
+      '</div>';
+    }
+
+    function addNewTask() {
+      const titleInput = document.getElementById('newTaskTitle');
+      const minsInput = document.getElementById('newTaskMinutes');
+      const categoryInput = document.getElementById('newTaskCategory');
+      const typeInput = document.getElementById('newTaskType');
+
+      const title = titleInput.value.trim();
+      const minutes = parseInt(minsInput.value, 10);
+
+      if (!title) {
+        showToast('Pehle task ka naam likh bhai!');
+        return;
+      }
+      if (isNaN(minutes) || minutes < 1 || minutes > 1000) {
+        showToast('Minutes 1 se 1000 ke beech daal!');
+        return;
+      }
+
+      const newTask = { id: 'task_' + Date.now(), title, category: categoryInput.value, minutes, spent: 0, completed: false };
+      if (typeInput.value === 'fixed') {
+        appState.fixedTasks.push(newTask);
+        showToast('Daily Fixed Habit (' + minutes + 'm) lock ho gaya!');
+      } else {
+        appState.todayTasks.push(newTask);
+        showToast('Aaj ke balance se ' + minutes + 'm allocate ho gaye!');
+      }
+
+      titleInput.value = '';
+      playSound('success');
+      saveState();
+      updateLiveClockAndBank();
+      renderAllLists();
+    }
+
+    function toggleTaskComplete(id, type) {
+      const list = type === 'fixed' ? appState.fixedTasks : appState.todayTasks;
+      const task = list.find(t => t.id === id);
+      if (!task) return;
+      task.completed = !task.completed;
+      if (task.completed) {
+        const unlogged = Math.max(0, task.minutes - (task.spent || 0));
+        if (unlogged > 0) {
+          task.spent = task.minutes;
+          appState.investedMinutes += unlogged;
+          logPassbook('Completed: ' + task.title, 'invest', unlogged);
+        }
+        playSound('success');
+        showToast('+' + unlogged + 'm Invested Balance mein jud gaye!');
+      }
+      saveState();
+      updateLiveClockAndBank();
+      renderAllLists();
+    }
+
+    function deleteTask(id, type) {
+      if (type === 'fixed') {
+        appState.fixedTasks = appState.fixedTasks.filter(t => t.id !== id);
+      } else {
+        appState.todayTasks = appState.todayTasks.filter(t => t.id !== id);
+      }
+      saveState();
+      updateLiveClockAndBank();
+      renderAllLists();
+      showToast('Task hata diya gaya');
+    }
+
+    function launchTaskFocus(id, type) {
+      const list = type === 'fixed' ? appState.fixedTasks : appState.todayTasks;
+      const task = list.find(t => t.id === id);
+      if (!task) return;
+      pauseFocusTimer();
+      const remainingTaskMins = Math.max(5, task.minutes - (task.spent || 0));
+      focusTimer.activeTaskId = id;
+      focusTimer.activeTaskType = type;
+      focusTimer.title = task.title;
+      focusTimer.category = '🎯 ' + task.category.toUpperCase();
+      focusTimer.totalSeconds = remainingTaskMins * 60;
+      focusTimer.remainingSeconds = remainingTaskMins * 60;
+      updateFocusUI();
+      switchTab('focus');
+      toggleFocusTimer();
+    }
+
+    function startQuickFocus(mins, title) {
+      pauseFocusTimer();
+      focusTimer.activeTaskId = null;
+      focusTimer.activeTaskType = 'quick';
+      focusTimer.title = title;
+      focusTimer.category = '⚡ QUICK FOCUS SPRINT';
+      focusTimer.totalSeconds = mins * 60;
+      focusTimer.remainingSeconds = mins * 60;
+      updateFocusUI();
+      switchTab('focus');
+      toggleFocusTimer();
+    }
+
+    function setFocusDuration(mins) {
+      pauseFocusTimer();
+      focusTimer.totalSeconds = mins * 60;
+      focusTimer.remainingSeconds = mins * 60;
+      updateFocusUI();
+    }
+
+    function addFiveMinutesFocus() {
+      focusTimer.totalSeconds += 300;
+      focusTimer.remainingSeconds += 300;
+      updateFocusUI();
+      showToast('+5 Minutes added');
+    }
+
+    function toggleFocusTimer() {
+      if (focusTimer.isRunning) {
+        pauseFocusTimer();
+      } else {
+        focusTimer.isRunning = true;
+        document.getElementById('focusPlayText').textContent = '⏸ Pause Timer';
+        document.getElementById('focusTimerSubtext').textContent = 'Har minute tere sapne mein invest ho raha hai...';
+        focusTimer.intervalId = setInterval(() => {
+          if (focusTimer.remainingSeconds > 0) {
+            focusTimer.remainingSeconds--;
+            if (focusTimer.remainingSeconds % 60 === 0 && focusTimer.remainingSeconds !== focusTimer.totalSeconds) {
+              creditOneFocusedMinute();
+            }
+            playSound('tick');
+            updateFocusUI();
+          } else {
+            completeFocusSessionEarly();
+          }
+        }, 1000);
+      }
+    }
+
+    function pauseFocusTimer() {
+      focusTimer.isRunning = false;
+      if (focusTimer.intervalId) {
+        clearInterval(focusTimer.intervalId);
+        focusTimer.intervalId = null;
+      }
+      document.getElementById('focusPlayText').textContent = '▶ Start Investing';
+      document.getElementById('focusTimerSubtext').textContent = 'Timer Paused';
+    }
+
+    function creditOneFocusedMinute() {
+      appState.investedMinutes += 1;
+      if (focusTimer.activeTaskId) {
+        const list = focusTimer.activeTaskType === 'fixed' ? appState.fixedTasks : appState.todayTasks;
+        const task = list.find(t => t.id === focusTimer.activeTaskId);
+        if (task) {
+          task.spent = (task.spent || 0) + 1;
+          if (task.spent >= task.minutes) task.completed = true;
+        }
+      }
+      saveState();
+      updateLiveClockAndBank();
+      renderAllLists();
+    }
+
+    function completeFocusSessionEarly() {
+      const elapsedSecs = focusTimer.totalSeconds - focusTimer.remainingSeconds;
+      const extraMins = Math.max(1, Math.round(elapsedSecs / 60));
+      pauseFocusTimer();
+      appState.investedMinutes += extraMins;
+      if (focusTimer.activeTaskId) {
+        const list = focusTimer.activeTaskType === 'fixed' ? appState.fixedTasks : appState.todayTasks;
+        const task = list.find(t => t.id === focusTimer.activeTaskId);
+        if (task) {
+          task.spent = (task.spent || 0) + extraMins;
+          if (task.spent >= task.minutes) task.completed = true;
+        }
+      }
+      logPassbook('Invested: ' + focusTimer.title, 'invest', extraMins);
+      focusTimer.remainingSeconds = focusTimer.totalSeconds;
+      updateFocusUI();
+      playSound('success');
+      saveState();
+      updateLiveClockAndBank();
+      renderAllLists();
+      showToast('Shabash! +' + extraMins + 'm Invested Balance mein jud gaye!');
+    }
+
+    function updateFocusUI() {
+      document.getElementById('focusTaskTitle').textContent = focusTimer.title;
+      document.getElementById('focusTaskCategory').textContent = focusTimer.category;
+      const mins = Math.floor(focusTimer.remainingSeconds / 60);
+      const secs = focusTimer.remainingSeconds % 60;
+      document.getElementById('focusTimerDisplay').textContent = String(mins).padStart(2, '0') + ':' + String(secs).padStart(2, '0');
+      const circumference = 326.72;
+      const fraction = focusTimer.totalSeconds > 0 ? focusTimer.remainingSeconds / focusTimer.totalSeconds : 0;
+      document.getElementById('focusRingCircle').style.strokeDashoffset = circumference - (fraction * circumference);
+    }
+
+    function logMinuteLeak(mins, reason) {
+      appState.leakedMinutes += mins;
+      logPassbook('Leak: ' + reason, 'leak', mins);
+      playSound('leak');
+      saveState();
+      updateLiveClockAndBank();
+      renderAllLists();
+      showToast('-' + mins + 'm leak logged (' + reason + '). Agla minute bacha!');
+    }
+
+    function logPassbook(text, type, mins) {
+      const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+      appState.passbook.push({ time: nowStr, text, type, mins });
+    }
+
+    function resetTodayDataPrompt() {
+      appState.investedMinutes = 0;
+      appState.leakedMinutes = 0;
+      appState.fixedTasks.forEach(t => { t.spent = 0; t.completed = false; });
+      appState.todayTasks.forEach(t => { t.spent = 0; t.completed = false; });
+      appState.passbook = [{ time: 'Reset', text: '1,440 Daily Ledger Reset', type: 'deposit', mins: 1440 }];
+      saveState();
+      updateLiveClockAndBank();
+      renderAllLists();
+      showToast('Aaj ka hisaab reset ho gaya!');
+    }
+
+    function triggerRealNotification() {
+      const m = get1440Metrics();
+      showToast('⏳ Lockscreen Alert: ' + m.remainingMinutes + ' mins left today!');
+    }
+
+    function showSimulatedInterstitialAd() {
+      document.getElementById('admobModal').style.display = 'flex';
+    }
+
+    function closeAdMobModal() {
+      document.getElementById('admobModal').style.display = 'none';
+    }
+
+    function switchTab(tabName) {
+      ['bank', 'budget', 'focus', 'audit'].forEach(t => {
+        document.getElementById('tab-' + t).classList.remove('active');
+        document.getElementById('nav-' + t).classList.remove('active');
+      });
+      document.getElementById('tab-' + tabName).classList.add('active');
+      document.getElementById('nav-' + tabName).classList.add('active');
+    }
+
+    let toastTimeout = null;
+    function showToast(msg) {
+      const box = document.getElementById('toastBox');
+      box.textContent = msg;
+      box.style.display = 'block';
+      if (toastTimeout) clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(() => { box.style.display = 'none'; }, 2500);
+    }
+
+    function escapeHtml(str) {
+      return String(str).replace(/[&<>"']/g, s => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[s]));
+    }
+
+    window.onload = function () {
+      loadState();
+      updateLiveClockAndBank();
+      renderAllLists();
+      updateFocusUI();
+      setInterval(updateLiveClockAndBank, 1000);
+    };
+  </script>
+</body>
+</html>

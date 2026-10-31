@@ -24,7 +24,7 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Build 1440 Native App with Lockscreen Guard & Custom Logo
+      - name: Build 1440 Native App with Lockscreen Task & Day Guard
         run: |
           sudo apt-get update && sudo apt-get install -y librsvg2-bin
           mkdir -p www
@@ -68,7 +68,7 @@ jobs:
             rsvg-convert -w "$size" -h "$size" icon.svg -o "android/app/src/main/res/$folder/ic_launcher_foreground.png"
           done
 
-          # 2. Create Native Persistent Lockscreen & Status Bar Service (MinuteGuardService.java)
+          # 2. Native Lockscreen & Status Bar Service (Supports Live Task Countdown + Day Balance)
           cat << 'EOF' > android/app/src/main/java/com/daily1440/app/MinuteGuardService.java
           package com.daily1440.app;
 
@@ -88,7 +88,7 @@ jobs:
           import java.util.Calendar;
 
           public class MinuteGuardService extends Service {
-              private static final String CHANNEL_ID = "1440_live_vault_channel";
+              private static final String CHANNEL_ID = "1440_lockscreen_guard_v3";
               private static final int NOTIF_ID = 1440;
               private Handler handler;
               private Runnable ticker;
@@ -102,7 +102,9 @@ jobs:
                       @Override
                       public void run() {
                           updateVaultNotification();
-                          handler.postDelayed(this, 15000);
+                          SharedPreferences prefs = getSharedPreferences("1440_native_prefs", MODE_PRIVATE);
+                          boolean taskActive = prefs.getBoolean("task_running", false);
+                          handler.postDelayed(this, taskActive ? 1000 : 10000);
                       }
                   };
               }
@@ -134,12 +136,36 @@ jobs:
               private Notification buildVaultNotification() {
                   Calendar cal = Calendar.getInstance();
                   int elapsed = (cal.get(Calendar.HOUR_OF_DAY) * 60) + cal.get(Calendar.MINUTE);
-                  int remaining = Math.max(0, 1440 - elapsed);
-                  int pct = (int) Math.round((remaining / 1440.0) * 100);
+                  int dayRemaining = Math.max(0, 1440 - elapsed);
+                  int dayPct = (int) Math.round((dayRemaining / 1440.0) * 100);
 
                   SharedPreferences prefs = getSharedPreferences("1440_native_prefs", MODE_PRIVATE);
                   int invested = prefs.getInt("invested", 0);
-                  String goal = prefs.getString("goal", "Invest your next minute wisely!");
+                  String nextGoal = prefs.getString("goal", "Invest your next minute wisely!");
+                  boolean taskRunning = prefs.getBoolean("task_running", false);
+                  String taskTitle = prefs.getString("task_title", "Focus Session");
+                  long taskEndMillis = prefs.getLong("task_end_millis", 0L);
+                  int taskTotalSec = prefs.getInt("task_total_sec", 1500);
+
+                  String contentTitle;
+                  String contentBody;
+                  int progMax = 1440;
+                  int progCurr = dayRemaining;
+
+                  long nowMillis = System.currentTimeMillis();
+                  if (taskRunning && taskEndMillis > nowMillis) {
+                      int remSec = (int) ((taskEndMillis - nowMillis) / 1000L);
+                      int m = remSec / 60;
+                      int s = remSec % 60;
+                      String timeFormatted = String.format("%02d:%02d", m, s);
+                      contentTitle = "🔥 " + taskTitle + " (" + timeFormatted + " left)";
+                      contentBody = "⏳ Day Left: " + dayRemaining + "m (" + dayPct + "%) • Invested: " + invested + "m";
+                      progMax = Math.max(1, taskTotalSec);
+                      progCurr = remSec;
+                  } else {
+                      contentTitle = "⏳ " + dayRemaining + " Mins Left Today (" + dayPct + "% of 1440m)";
+                      contentBody = "Invested: " + invested + "m • Next: " + nextGoal;
+                  }
 
                   Intent openIntent = new Intent(this, MainActivity.class);
                   openIntent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
@@ -154,13 +180,13 @@ jobs:
                       builder = new Notification.Builder(this);
                   }
 
-                  builder.setContentTitle("⏳ " + remaining + " Mins Left Today (" + pct + "% Left)")
-                         .setContentText("Invested: " + invested + "m • " + goal)
+                  builder.setContentTitle(contentTitle)
+                         .setContentText(contentBody)
                          .setSmallIcon(getApplicationInfo().icon)
                          .setContentIntent(pendingIntent)
                          .setOngoing(true)
                          .setOnlyAlertOnce(true)
-                         .setProgress(1440, remaining, false);
+                         .setProgress(progMax, progCurr, false);
 
                   if (Build.VERSION.SDK_INT >= 21) {
                       builder.setVisibility(Notification.VISIBILITY_PUBLIC);
@@ -174,17 +200,21 @@ jobs:
                       builder.setForegroundServiceBehavior(Notification.FOREGROUND_SERVICE_IMMEDIATE);
                   }
 
-                  return builder.build();
+                  Notification notif = builder.build();
+                  notif.flags |= Notification.FLAG_NO_CLEAR | Notification.FLAG_ONGOING_EVENT;
+                  return notif;
               }
 
               private void createChannel() {
                   if (Build.VERSION.SDK_INT >= 26) {
                       NotificationChannel channel = new NotificationChannel(
                           CHANNEL_ID,
-                          "1440 Live Minute Countdown",
-                          NotificationManager.IMPORTANCE_LOW
+                          "1440 Lockscreen & Task Guard",
+                          NotificationManager.IMPORTANCE_DEFAULT
                       );
-                      channel.setDescription("Shows your remaining daily minutes on the lockscreen and status bar");
+                      channel.setDescription("Displays live task timer and remaining daily minutes on lockscreen");
+                      channel.setSound(null, null);
+                      channel.enableVibration(false);
                       channel.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);
                       channel.setShowBadge(false);
                       NotificationManager nm = getSystemService(NotificationManager.class);
@@ -199,7 +229,7 @@ jobs:
           }
           EOF
 
-          # 3. Update MainActivity.java to Start Service & Sync with JS
+          # 3. Update MainActivity.java to Bind JS Bridge Before Page Load
           cat << 'EOF' > android/app/src/main/java/com/daily1440/app/MainActivity.java
           package com.daily1440.app;
 
@@ -215,12 +245,13 @@ jobs:
               @Override
               public void onCreate(Bundle savedInstanceState) {
                   super.onCreate(savedInstanceState);
-                  requestNotifPermissionAndStart();
                   try {
                       if (this.bridge != null && this.bridge.getWebView() != null) {
                           this.bridge.getWebView().addJavascriptInterface(new WebAppBridge(), "Android1440");
+                          this.bridge.getWebView().reload();
                       }
                   } catch (Exception e) {}
+                  requestNotifPermissionAndStart();
               }
 
               @Override
@@ -258,11 +289,16 @@ jobs:
 
               public class WebAppBridge {
                   @JavascriptInterface
-                  public void syncState(int invested, String activeGoal) {
+                  public void syncGuard(int invested, String nextGoal, boolean isRunning, String taskTitle, int remSec, int totalSec) {
                       SharedPreferences prefs = getSharedPreferences("1440_native_prefs", MODE_PRIVATE);
+                      long endMillis = isRunning ? (System.currentTimeMillis() + (remSec * 1000L)) : 0L;
                       prefs.edit()
                            .putInt("invested", invested)
-                           .putString("goal", activeGoal != null ? activeGoal : "Stay focused on your goal!")
+                           .putString("goal", nextGoal != null ? nextGoal : "Stay focused!")
+                           .putBoolean("task_running", isRunning)
+                           .putString("task_title", taskTitle != null ? taskTitle : "Focus Session")
+                           .putLong("task_end_millis", endMillis)
+                           .putInt("task_total_sec", totalSec)
                            .apply();
                       startMinuteGuard();
                   }

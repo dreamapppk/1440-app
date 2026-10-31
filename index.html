@@ -1,771 +1,322 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>1440 — The Daily Minute Bank</title>
-  <style>
-    :root {
-      --bg-main: #050608;
-      --bg-card: #12151E;
-      --bg-card-soft: #171B26;
-      --border: #1E2330;
-      --text-main: #F8FAFC;
-      --text-muted: #94A3B8;
-      --text-dim: #64748B;
-      --gold: #F59E0B;
-      --gold-light: #FBBF24;
-      --emerald: #10B981;
-      --rose: #F43F5E;
-      --sky: #38BDF8;
-    }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      -webkit-tap-highlight-color: transparent;
-      user-select: none;
-    }
-
-    body {
-      background-color: var(--bg-main);
-      color: var(--text-main);
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      min-height: 100vh;
-      overflow-x: hidden;
-      padding-bottom: 90px;
-    }
-
-    .mono {
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Courier New", monospace;
-    }
-
-    .app-shell {
-      max-width: 440px;
-      margin: 0 auto;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-    }
-
-    /* Top Header */
-    .top-header {
-      position: sticky;
-      top: 0;
-      z-index: 30;
-      background: rgba(9, 10, 15, 0.94);
-      backdrop-filter: blur(12px);
-      border-bottom: 1px solid var(--border);
-      padding: 12px 16px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-
-    .brand-row {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .brand-logo {
-      width: 38px;
-      height: 38px;
-      border-radius: 11px;
-      background: linear-gradient(135deg, rgba(245, 158, 11, 0.25), rgba(245, 158, 11, 0.08));
-      border: 1px solid rgba(245, 158, 11, 0.55);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: var(--gold-light);
-      font-weight: 900;
-      font-size: 11px;
-      box-shadow: 0 0 15px rgba(245, 158, 11, 0.2);
-    }
-
-    .brand-title {
-      font-size: 13px;
-      font-weight: 800;
-      letter-spacing: 0.5px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .badge-guard {
-      font-size: 9px;
-      padding: 2px 6px;
-      border-radius: 99px;
-      background: rgba(16, 185, 129, 0.15);
-      color: var(--emerald);
-      border: 1px solid rgba(16, 185, 129, 0.35);
-      font-weight: 700;
-      text-transform: uppercase;
-    }
-
-    .header-sub {
-      font-size: 11px;
-      color: var(--text-muted);
-      margin-top: 2px;
-    }
-
-    .header-right {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .icon-btn {
-      width: 32px;
-      height: 32px;
-      border-radius: 8px;
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      color: var(--gold-light);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 14px;
-      cursor: pointer;
-    }
-
-    .mini-pill {
-      padding: 5px 10px;
-      border-radius: 8px;
-      background: var(--bg-card);
-      border: 1px solid rgba(245, 158, 11, 0.35);
-      color: var(--gold-light);
-      font-size: 12px;
-      font-weight: 800;
-    }
-
-    /* Main Content */
-    .main-area {
-      padding: 16px;
-      flex: 1;
-    }
-
-    .tab-section {
-      display: none;
-      flex-direction: column;
-      gap: 16px;
-    }
-
-    .tab-section.active {
-      display: flex;
-    }
-
-    .card {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      padding: 16px;
-    }
-
-    .vault-card {
-      background: linear-gradient(145deg, #161A26 0%, #090A0F 100%);
-      border: 1px solid rgba(245, 158, 11, 0.4);
-      border-radius: 24px;
-      padding: 20px;
-      box-shadow: 0 0 32px rgba(245, 158, 11, 0.14);
-      position: relative;
-      overflow: hidden;
-    }
-
-    .row-between {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-
-    .label-up {
-      font-size: 10px;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: 1.2px;
-      color: var(--gold-light);
-    }
-
-    .clock-pill {
-      font-size: 11px;
-      color: var(--text-muted);
-      background: rgba(255, 255, 255, 0.05);
-      padding: 3px 8px;
-      border-radius: 6px;
-      border: 1px solid rgba(255, 255, 255, 0.08);
-    }
-
-    .hero-balance {
-      margin: 14px 0 6px 0;
-      display: flex;
-      align-items: baseline;
-      gap: 8px;
-    }
-
-    .hero-number {
-      font-size: 56px;
-      font-weight: 900;
-      line-height: 1;
-      letter-spacing: -2px;
-      color: #FFFFFF;
-    }
-
-    .hero-unit {
-      font-size: 18px;
-      font-weight: 800;
-      color: var(--gold-light);
-    }
-
-    .sec-badge {
-      margin-left: auto;
-      background: rgba(245, 158, 11, 0.15);
-      border: 1px solid rgba(245, 158, 11, 0.35);
-      padding: 4px 8px;
-      border-radius: 8px;
-      font-size: 11px;
-      color: var(--gold-light);
-      font-weight: 700;
-    }
-
-    .bar-track {
-      width: 100%;
-      height: 8px;
-      background: rgba(255, 255, 255, 0.07);
-      border-radius: 99px;
-      overflow: hidden;
-      margin: 10px 0 6px 0;
-    }
-
-    .bar-fill-gold {
-      height: 100%;
-      background: linear-gradient(90deg, #F59E0B, #FDE047);
-      border-radius: 99px;
-      transition: width 0.5s linear;
-    }
-
-    .sub-row {
-      display: flex;
-      justify-content: space-between;
-      font-size: 11px;
-      color: var(--text-muted);
-    }
-
-    .btn-grid-2 {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-      margin-top: 14px;
-    }
-
-    .btn {
-      border: none;
-      border-radius: 12px;
-      padding: 11px 14px;
-      font-size: 12px;
-      font-weight: 800;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-      transition: transform 0.1s;
-    }
-
-    .btn:active {
-      transform: scale(0.97);
-    }
-
-    .btn-gold {
-      background: var(--gold);
-      color: #050608;
-    }
-
-    .btn-dark {
-      background: rgba(255, 255, 255, 0.06);
-      color: var(--text-main);
-      border: 1px solid rgba(255, 255, 255, 0.12);
-    }
-
-    .btn-emerald {
-      background: rgba(16, 185, 129, 0.16);
-      color: var(--emerald);
-      border: 1px solid rgba(16, 185, 129, 0.35);
-    }
-
-    .overdraft-box {
-      display: none;
-      background: rgba(244, 63, 94, 0.14);
-      border: 1px solid rgba(244, 63, 94, 0.4);
-      border-radius: 16px;
-      padding: 12px;
-      color: #FDA4AF;
-      font-size: 12px;
-      gap: 10px;
-      align-items: flex-start;
-    }
-
-    .overdraft-box.show {
-      display: flex;
-    }
-
-    .ledger-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-      margin-top: 12px;
-    }
-
-    .stat-box {
-      background: rgba(255, 255, 255, 0.03);
-      border: 1px solid rgba(255, 255, 255, 0.06);
-      border-radius: 14px;
-      padding: 10px 12px;
-    }
-
-    .stat-label {
-      font-size: 11px;
-      color: var(--text-muted);
-    }
-
-    .stat-val {
-      font-size: 17px;
-      font-weight: 800;
-      margin-top: 3px;
-    }
-
-    .multi-bar {
-      height: 10px;
-      width: 100%;
-      background: #0B0D13;
-      border-radius: 99px;
-      overflow: hidden;
-      display: flex;
-      margin-top: 10px;
-    }
-
-    .task-list {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      margin-top: 10px;
-    }
-
-    .task-item {
-      background: var(--bg-card-soft);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-    }
-
-    .task-left {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      flex: 1;
-      min-width: 0;
-    }
-
-    .check-circle {
-      width: 22px;
-      height: 22px;
-      border-radius: 7px;
-      border: 2px solid var(--text-dim);
-      background: transparent;
-      color: #050608;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 12px;
-      font-weight: 900;
-      cursor: pointer;
-      flex-shrink: 0;
-    }
-
-    .check-circle.done {
-      background: var(--emerald);
-      border-color: var(--emerald);
-    }
-
-    .task-title {
-      font-size: 14px;
-      font-weight: 700;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .task-title.done {
-      text-decoration: line-through;
-      color: var(--text-dim);
-    }
-
-    .task-meta {
-      font-size: 11px;
-      color: var(--text-muted);
-      margin-top: 2px;
-    }
-
-    .mini-spend-btn {
-      background: rgba(245, 158, 11, 0.16);
-      border: 1px solid rgba(245, 158, 11, 0.35);
-      color: var(--gold-light);
-      padding: 6px 10px;
-      border-radius: 10px;
-      font-size: 11px;
-      font-weight: 800;
-      cursor: pointer;
-      white-space: nowrap;
-    }
-
-    .del-btn {
-      background: transparent;
-      border: none;
-      color: var(--text-dim);
-      font-size: 14px;
-      padding: 4px 6px;
-      cursor: pointer;
-    }
-
-    .input-field, .select-field {
-      width: 100%;
-      background: #090A0F;
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 11px 12px;
-      color: var(--text-main);
-      font-size: 13px;
-      outline: none;
-      margin-top: 4px;
-    }
-
-    .input-field:focus, .select-field:focus {
-      border-color: var(--gold);
-    }
-
-    .form-grid-3 {
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap: 8px;
-      margin: 10px 0 12px 0;
-    }
-
-    .field-label {
-      font-size: 10px;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      font-weight: 700;
-    }
-
-    .focus-wrap {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      text-align: center;
-      padding: 20px 16px;
-    }
-
-    .ring-box {
-      position: relative;
-      width: 220px;
-      height: 220px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin: 16px 0;
-    }
-
-    .ring-svg {
-      width: 100%;
-      height: 100%;
-      transform: rotate(-90deg);
-    }
-
-    .ring-center {
-      position: absolute;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 0 14px;
-    }
-
-    .timer-big {
-      font-size: 46px;
-      font-weight: 900;
-      letter-spacing: -1px;
-    }
-
-    .preset-row {
-      display: flex;
-      gap: 8px;
-      margin-bottom: 16px;
-    }
-
-    .chip-btn {
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid var(--border);
-      color: var(--text-main);
-      padding: 6px 12px;
-      border-radius: 10px;
-      font-size: 12px;
-      font-weight: 700;
-      cursor: pointer;
-    }
-
-    .quote-box {
-      font-size: 12px;
-      color: var(--text-muted);
-      font-style: italic;
-      line-height: 1.5;
-      text-align: center;
-      padding: 14px 16px;
-    }
-
-    .lock-screen-mock {
-      background: linear-gradient(180deg, #0F172A 0%, #050608 100%);
-      border: 1px solid #334155;
-      border-radius: 22px;
-      padding: 16px;
-      margin-top: 10px;
-    }
-
-    .lock-notif {
-      background: rgba(18, 21, 30, 0.96);
-      border: 1px solid rgba(245, 158, 11, 0.5);
-      border-radius: 16px;
-      padding: 12px;
-      margin-top: 10px;
-      box-shadow: 0 4px 20px rgba(245, 158, 11, 0.12);
-    }
-
-    .leak-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-      margin: 12px 0;
-    }
-
-    .leak-btn {
-      background: rgba(244, 63, 94, 0.08);
-      border: 1px solid rgba(244, 63, 94, 0.25);
-      border-radius: 12px;
-      padding: 10px;
-      text-align: left;
-      color: var(--text-main);
-      cursor: pointer;
-    }
-
-    .bottom-nav {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      max-width: 440px;
-      margin: 0 auto;
-      height: 64px;
-      background: rgba(9, 10, 15, 0.96);
-      border-top: 1px solid var(--border);
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      z-index: 40;
-    }
-
-    .nav-btn {
-      background: transparent;
-      border: none;
-      color: var(--text-dim);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 4px;
-      font-size: 10px;
-      font-weight: 700;
-      cursor: pointer;
-    }
-
-    .nav-btn.active {
-      color: var(--gold-light);
-    }
-
-    .nav-icon {
-      font-size: 16px;
-    }
-
-    .toast {
-      position: fixed;
-      top: 68px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: #1E293B;
-      border: 1px solid rgba(245, 158, 11, 0.5);
-      color: #FFF;
-      padding: 8px 16px;
-      border-radius: 99px;
-      font-size: 12px;
-      font-weight: 700;
-      z-index: 100;
-      display: none;
-      box-shadow: 0 8px 25px rgba(0,0,0,0.5);
-      white-space: nowrap;
-    }
-  </style>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+<title>1440</title>
+<style>
+:root{--bg:#050608;--card:#12151E;--soft:#171B26;--bdr:#1E2330;--txt:#F8FAFC;--mut:#94A3B8;--dim:#64748B;--gold:#F59E0B;--glt:#FBBF24;--em:#10B981;--rose:#F43F5E;--sky:#38BDF8}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;user-select:none}
+body{background:var(--bg);color:var(--txt);font-family:system-ui,-apple-system,sans-serif;min-height:100vh;padding-bottom:88px}
+.mono{font-family:ui-monospace,monospace}
+.shell{max-width:440px;margin:0 auto}
+.hdr{position:sticky;top:0;z-index:30;background:rgba(9,10,15,.95);border-bottom:1px solid var(--bdr);padding:12px 16px;display:flex;align-items:center;justify-content:space-between}
+.row{display:flex;align-items:center;justify-content:space-between}
+.logo{width:36px;height:36px;border-radius:10px;background:rgba(245,158,11,.18);border:1px solid var(--gold);display:flex;align-items:center;justify-content:center;color:var(--glt);font-weight:900;font-size:11px;margin-right:10px}
+.bdg{font-size:9px;padding:2px 6px;border-radius:99px;background:rgba(16,185,129,.15);color:var(--em);border:1px solid var(--em);font-weight:700;margin-left:6px}
+.ibtn{width:32px;height:32px;border-radius:8px;background:var(--card);border:1px solid var(--bdr);color:var(--glt);font-size:14px}
+.mpill{padding:5px 10px;border-radius:8px;background:var(--card);border:1px solid var(--gold);color:var(--glt);font-size:12px;font-weight:800;margin-left:6px}
+main{padding:14px}
+.tab{display:none;flex-direction:column;gap:14px}.tab.active{display:flex}
+.card{background:var(--card);border:1px solid var(--bdr);border-radius:18px;padding:15px}
+.vcard{background:linear-gradient(145deg,#161A26,#090A0F);border:1px solid rgba(245,158,11,.45);border-radius:22px;padding:18px;box-shadow:0 0 28px rgba(245,158,11,.14)}
+.hnum{font-size:52px;font-weight:900;line-height:1;letter-spacing:-2px;color:#FFF}
+.sbdg{margin-left:auto;background:rgba(245,158,11,.15);border:1px solid var(--gold);padding:4px 8px;border-radius:8px;font-size:11px;color:var(--glt);font-weight:700}
+.trk{width:100%;height:8px;background:rgba(255,255,255,.08);border-radius:99px;overflow:hidden;margin:10px 0 6px}
+.fill{height:100%;background:linear-gradient(90deg,#F59E0B,#FDE047);border-radius:99px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:10px 0}
+.btn{border:none;border-radius:12px;padding:11px;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;gap:6px}
+.btn:active{transform:scale(.96)}
+.bgold{background:var(--gold);color:#050608}
+.bdark{background:rgba(255,255,255,.07);color:var(--txt);border:1px solid rgba(255,255,255,.14)}
+.bem{background:rgba(16,185,129,.18);color:var(--em);border:1px solid var(--em)}
+.sbox{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:10px}
+.mbar{height:9px;width:100%;background:#0B0D13;border-radius:99px;overflow:hidden;display:flex;margin-top:8px}
+.tlist{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.titem{background:var(--soft);border:1px solid var(--bdr);border-radius:14px;padding:11px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.chk{width:22px;height:22px;border-radius:6px;border:2px solid var(--dim);background:0;color:#050608;font-weight:900;margin-right:8px;flex-shrink:0}
+.chk.done{background:var(--em);border-color:var(--em)}
+.tt{font-size:13px;font-weight:700}.tt.done{text-decoration:line-through;color:var(--dim)}
+.tm{font-size:11px;color:var(--mut)}
+.sbtn{background:rgba(245,158,11,.16);border:1px solid var(--gold);color:var(--glt);padding:6px 10px;border-radius:9px;font-size:11px;font-weight:800;white-space:nowrap}
+.inp{width:100%;background:#090A0F;border:1px solid var(--bdr);border-radius:10px;padding:10px;color:var(--txt);font-size:13px;margin-top:4px}
+.lbl{font-size:10px;color:var(--mut);text-transform:uppercase;font-weight:700}
+.rbox{position:relative;width:200px;height:200px;display:flex;align-items:center;justify-content:center;margin:14px auto}
+.rsvg{width:100%;height:100%;transform:rotate(-90deg)}
+.rcnt{position:absolute;text-align:center}
+.tbig{font-size:42px;font-weight:900}
+.chip{background:rgba(255,255,255,.06);border:1px solid var(--bdr);color:var(--txt);padding:6px 12px;border-radius:9px;font-size:12px;font-weight:700}
+.lmock{background:#0B1120;border:1px solid #334155;border-radius:18px;padding:14px;margin-top:10px}
+.lnot{background:#12151E;border:1px solid var(--gold);border-radius:14px;padding:12px;margin-top:8px}
+.lbtn{background:rgba(244,63,94,.1);border:1px solid rgba(244,63,94,.3);border-radius:12px;padding:10px;text-align:left;color:var(--txt)}
+.bnav{position:fixed;bottom:0;left:0;right:0;max-width:440px;margin:0 auto;height:62px;background:#090A0F;border-top:1px solid var(--bdr);display:grid;grid-template-columns:repeat(4,1fr);z-index:40}
+.nbtn{background:0;border:none;color:var(--dim);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:10px;font-weight:700}
+.nbtn.active{color:var(--glt)}
+.toast{position:fixed;top:66px;left:50%;transform:translateX(-50%);background:#1E293B;border:1px solid var(--gold);color:#FFF;padding:8px 16px;border-radius:99px;font-size:12px;font-weight:700;z-index:99;display:none;white-space:nowrap}
+</style>
 </head>
 <body>
-  <div class="app-shell">
-    <!-- TOP BAR -->
-    <header class="top-header">
-      <div class="brand-row">
-        <div class="brand-logo mono">1440</div>
-        <div>
-          <div class="brand-title">
-            1440 MINUTE BANK
-            <span class="badge-guard">Live Guard</span>
-          </div>
-          <div id="headerDateText" class="header-sub">Loading today...</div>
+<div class="shell">
+  <header class="hdr">
+    <div class="row">
+      <div class="logo mono">1440</div>
+      <div>
+        <div style="font-size:13px;font-weight:800">1440 MINUTE BANK <span class="bdg">LIVE GUARD</span></div>
+        <div id="hDate" style="font-size:11px;color:var(--mut)">Loading...</div>
+      </div>
+    </div>
+    <div class="row">
+      <button class="ibtn" onclick="togSnd()" id="sBtn">🔊</button>
+      <div class="mpill mono" id="topRem">---m</div>
+    </div>
+  </header>
+
+  <main>
+    <section id="tab-bank" class="tab active">
+      <div class="vcard">
+        <div class="row">
+          <span class="lbl" style="color:var(--glt)">⏳ Today's Remaining Balance</span>
+          <span id="clock" class="mono" style="font-size:11px;color:var(--mut)">00:00:00</span>
+        </div>
+        <div style="display:flex;align-items:baseline;gap:8px;margin:12px 0 6px">
+          <span id="hMins" class="hnum mono">1,440</span>
+          <span style="font-size:17px;font-weight:800;color:var(--glt)">Mins</span>
+          <span class="sbdg mono">Next -1m in <span id="hSecs">60s</span></span>
+        </div>
+        <div class="trk"><div id="secBar" class="fill" style="width:100%"></div></div>
+        <div class="row" style="font-size:11px;color:var(--mut)">
+          <span id="dayPct">100% of today left</span>
+          <span class="mono">Resets 24:00</span>
+        </div>
+        <div class="g2">
+          <button class="btn bgold" onclick="quickFoc(25,'Deep Goal Sprint')">⚡ Spend 25m Now</button>
+          <button class="btn bdark" onclick="swTab('budget')">➕ Budget Mins</button>
         </div>
       </div>
-      <div class="header-right">
-        <button class="icon-btn" onclick="toggleSound()" id="soundBtn" title="Toggle Sound">🔊</button>
-        <div class="mini-pill mono" id="miniTopRemaining">---m</div>
+
+      <div id="ovAlert" class="card" style="display:none;border-color:var(--rose);color:#FDA4AF;font-size:12px">
+        ⚠️ <strong>MINUTE OVERDRAFT!</strong> Scheduled tasks exceed remaining minutes before midnight.
       </div>
-    </header>
 
-    <!-- MAIN CONTENT -->
-    <main class="main-area">
-      <!-- TAB 1: 1440 VAULT -->
-      <section id="tab-bank" class="tab-section active">
-        <div class="vault-card">
-          <div class="row-between">
-            <span class="label-up">⏳ Today's Remaining Balance</span>
-            <span id="liveClockDisplay" class="clock-pill mono">00:00:00</span>
-          </div>
+      <div class="card">
+        <div class="row"><span class="lbl">DAILY 1440 MINUTE LEDGER</span><span class="mono" style="font-size:11px;color:var(--dim)">1,440m</span></div>
+        <div class="mbar">
+          <div id="bEl" style="background:#475569;width:0%"></div>
+          <div id="bIn" style="background:#10B981;width:0%"></div>
+          <div id="bLk" style="background:#F43F5E;width:0%"></div>
+          <div id="bSc" style="background:#F59E0B;width:0%"></div>
+        </div>
+        <div class="g2">
+          <div class="sbox"><div class="tm">Elapsed Today</div><div id="lEl" class="mono" style="font-size:16px;font-weight:800">0m</div></div>
+          <div class="sbox"><div class="tm" style="color:var(--em)">Invested (Goals)</div><div id="lIn" class="mono" style="font-size:16px;font-weight:800;color:var(--em)">0m</div></div>
+          <div class="sbox"><div class="tm" style="color:var(--glt)">Scheduled Left</div><div id="lSc" class="mono" style="font-size:16px;font-weight:800;color:var(--glt)">0m</div></div>
+          <div class="sbox"><div class="tm" style="color:var(--sky)">Unassigned Free</div><div id="lFr" class="mono" style="font-size:16px;font-weight:800;color:var(--sky)">0m</div></div>
+        </div>
+      </div>
 
-          <div class="hero-balance">
-            <span id="heroMinutesLeft" class="hero-number mono">1,440</span>
-            <span class="hero-unit">Mins</span>
-            <span class="sec-badge mono">Next -1m in <span id="heroSecondsLeft">60s</span></span>
-          </div>
+      <div class="card">
+        <div class="row"><b style="font-size:14px">⚡ Active Commitments</b><span onclick="swTab('budget')" style="font-size:12px;color:var(--glt);font-weight:700">Manage →</span></div>
+        <div id="homeList" class="tlist"></div>
+      </div>
+    </section>
 
-          <div class="bar-track">
-            <div id="currentMinuteBar" class="bar-fill-gold" style="width: 100%;"></div>
-          </div>
+    <section id="tab-budget" class="tab">
+      <div class="card row">
+        <div><div class="lbl">Available Balance</div><div id="bRem" class="mono" style="font-size:19px;font-weight:900;color:var(--glt)">0m</div></div>
+        <div style="text-align:right"><div class="lbl">Planned Left</div><div id="bPlan" class="mono" style="font-size:19px;font-weight:900;color:var(--em)">0m</div></div>
+      </div>
+      <div class="card">
+        <div style="font-size:13px;font-weight:800;color:var(--glt)">➕ Allocate Minutes to a Task</div>
+        <input id="tTitle" class="inp" placeholder="e.g., Deep Work, Workout, Reading..."/>
+        <div class="g3">
+          <div><div class="lbl">Minutes</div><input id="tMins" type="number" value="30" class="inp mono"/></div>
+          <div><div class="lbl">Category</div><select id="tCat" class="inp"><option>Dream Goal</option><option>Work</option><option>Health</option><option>Learning</option></select></div>
+          <div><div class="lbl">Type</div><select id="tType" class="inp"><option value="today">Today</option><option value="fixed">Daily Fix</option></select></div>
+        </div>
+        <button class="btn bgold" style="width:100%" onclick="addTask()">+ Lock In Minute Budget</button>
+      </div>
+      <div class="card"><b style="font-size:14px">🔁 Daily Fixed Commitments</b><div id="fixList" class="tlist"></div></div>
+      <div class="card"><b style="font-size:14px">📅 Today's Minute Schedule</b><div id="todList" class="tlist"></div></div>
+    </section>
 
-          <div class="sub-row">
-            <span id="dayPercentRemaining">100% of today left</span>
-            <span class="mono">Resets at 24:00 Midnight</span>
-          </div>
-
-          <div class="btn-grid-2">
-            <button class="btn btn-gold" onclick="startQuickFocus(25, 'Deep Goal Sprint')">⚡ Spend 25m Now</button>
-            <button class="btn btn-dark" onclick="switchTab('budget')">➕ Budget Mins</button>
+    <section id="tab-focus" class="tab">
+      <div class="card" style="text-align:center">
+        <div class="row"><span class="lbl">Investing Mode</span><span class="mono" style="font-size:12px;color:var(--glt)">Day Left: <span id="fDay">---m</span></span></div>
+        <div id="fCat" style="margin-top:10px;font-size:11px;font-weight:800;color:var(--glt)">🎯 DREAM GOAL</div>
+        <div id="fTit" style="font-size:18px;font-weight:900;margin-top:4px">Deep Goal Sprint</div>
+        <div class="rbox">
+          <svg class="rsvg" viewBox="0 0 120 120">
+            <circle cx="60" cy="60" r="52" stroke="#1E2330" stroke-width="8" fill="none"/>
+            <circle id="fRing" cx="60" cy="60" r="52" stroke="#F59E0B" stroke-width="8" fill="none" stroke-linecap="round" stroke-dasharray="326.7" stroke-dashoffset="0"/>
+          </svg>
+          <div class="rcnt">
+            <div id="fDisp" class="tbig mono">25:00</div>
+            <div id="fSub" style="font-size:11px;color:var(--mut)">Ready to invest</div>
           </div>
         </div>
+        <div style="display:flex;justify-content:center;gap:8px;margin-bottom:14px">
+          <button class="chip mono" onclick="setDur(15)">15m</button>
+          <button class="chip mono" onclick="setDur(25)">25m</button>
+          <button class="chip mono" onclick="setDur(45)">45m</button>
+          <button class="chip mono" onclick="add5()" style="color:var(--glt)">+5m</button>
+        </div>
+        <div class="g2">
+          <button class="btn bgold" onclick="togFoc()" id="fPlay">▶ Start Investing</button>
+          <button class="btn bem" onclick="doneFoc()">✔ Complete</button>
+        </div>
+      </div>
+    </section>
 
-        <!-- OVERDRAFT WARNING -->
-        <div id="overdraftAlert" class="overdraft-box">
-          <span>⚠️</span>
-          <div>
-            <strong>MINUTE OVERDRAFT WARNING!</strong><br/>
-            You have scheduled more minutes than remaining before midnight. Please adjust your task budgets!
+    <section id="tab-audit" class="tab">
+      <div class="card">
+        <div class="row">
+          <div><b style="font-size:14px">🛡️ Live Lockscreen & Task Guard</b><div class="tm">Shows active task timer & day balance on lockscreen</div></div>
+          <button class="sbtn" onclick="syncGuard(true)">🔄 Sync</button>
+        </div>
+        <div class="lmock">
+          <div style="text-align:center"><div id="lClk" class="mono" style="font-size:28px">09:30</div><div style="font-size:10px;color:var(--em)">● ACTIVE LOCKSCREEN GUARD</div></div>
+          <div class="lnot">
+            <div class="row" style="font-size:10px;color:var(--glt);font-weight:800"><span id="lHdr">⏳ 1440 MINUTE BANK</span><span>LIVE</span></div>
+            <div class="row" style="margin-top:5px"><b id="lMain" style="font-size:14px">840 mins left today</b><span id="lInv" class="mono" style="font-size:11px;color:var(--em)">Invested: 0m</span></div>
+            <div class="trk" style="height:5px;margin:6px 0"><div id="lBar" class="fill" style="width:55%"></div></div>
+            <div id="lNext" class="tm">Active Goal: Build My Dream Goal</div>
           </div>
         </div>
+      </div>
 
-        <!-- DAILY LEDGER -->
-        <div class="card">
-          <div class="row-between">
-            <span style="font-size:12px; font-weight:800; color:var(--text-muted);">DAILY 1440 MINUTE LEDGER</span>
-            <span class="mono" style="font-size:11px; color:var(--text-dim);">Deposit: 1,440m</span>
-          </div>
-
-          <div class="multi-bar">
-            <div id="barElapsed" style="background:#475569; width:0%;"></div>
-            <div id="barInvested" style="background:#10B981; width:0%;"></div>
-            <div id="barLeaked" style="background:#F43F5E; width:0%;"></div>
-            <div id="barScheduled" style="background:#F59E0B; width:0%;"></div>
-          </div>
-
-          <div class="ledger-grid">
-            <div class="stat-box">
-              <div class="stat-label">Elapsed Today</div>
-              <div id="ledgerElapsed" class="stat-val mono">0m</div>
-            </div>
-            <div class="stat-box">
-              <div class="stat-label" style="color:var(--emerald);">Invested (Goals)</div>
-              <div id="ledgerInvested" class="stat-val mono" style="color:var(--emerald);">0m</div>
-            </div>
-            <div class="stat-box">
-              <div class="stat-label" style="color:var(--gold-light);">Scheduled Left</div>
-              <div id="ledgerScheduled" class="stat-val mono" style="color:var(--gold-light);">0m</div>
-            </div>
-            <div class="stat-box">
-              <div class="stat-label" style="color:var(--sky);">Unassigned Free</div>
-              <div id="ledgerFree" class="stat-val mono" style="color:var(--sky);">0m</div>
-            </div>
-          </div>
+      <div class="card">
+        <div class="row"><div><b style="font-size:14px">🩸 Minute Leak Tracker</b><div class="tm">Log distractions honestly</div></div><div id="effDisp" class="mono" style="font-size:16px;font-weight:900;color:var(--em)">100%</div></div>
+        <div class="g2">
+          <button class="lbtn" onclick="leak(15,'Social Media')"><b class="mono" style="color:var(--rose);font-size:12px">+15m Leak</b><div class="tm">📱 Reels / Social</div></button>
+          <button class="lbtn" onclick="leak(15,'Procrastination')"><b class="mono" style="color:var(--rose);font-size:12px">+15m Leak</b><div class="tm">🛋️ Delaying</div></button>
+          <button class="lbtn" onclick="leak(30,'Unplanned Chat')"><b class="mono" style="color:var(--rose);font-size:12px">+30m Leak</b><div class="tm">💬 Idle Chat</div></button>
+          <button class="lbtn" onclick="leak(20,'Overthinking')"><b class="mono" style="color:var(--rose);font-size:12px">+20m Leak</b><div class="tm">🌀 Overthinking</div></button>
         </div>
+        <div class="row" style="font-size:12px;margin-top:10px"><span class="tm">Total Leaked Today:</span><b id="lkTot" class="mono" style="color:var(--rose)">0 mins</b></div>
+      </div>
 
-        <!-- ACTIVE COMMITMENTS -->
-        <div class="card">
-          <div class="row-between">
-            <span style="font-size:14px; font-weight:800;">⚡ Active Minute Commitments</span>
-            <span onclick="switchTab('budget')" style="font-size:12px; color:var(--gold-light); font-weight:700; cursor:pointer;">Manage All →</span>
-          </div>
-          <div id="homeActiveTasksList" class="task-list"></div>
-        </div>
-      </section>
+      <div class="card">
+        <div class="row"><b style="font-size:14px">📒 Today's Passbook</b><button onclick="rstDay()" style="background:0;border:none;color:var(--mut);font-size:11px">Reset Day</button></div>
+        <div id="pList" class="tlist"></div>
+      </div>
+    </section>
+  </main>
 
-      <!-- TAB 2: SCHEDULE & FIXED HABITS -->
-      <section id="tab-budget" class="tab-section">
-        <div class="card row-between">
-          <div>
-            <div class="field-label">Available to Budget</div>
-            <div id="budgetTabRemaining" class="mono" style="font-size:20px; font-weight:900; color:var(--gold-light);">0 mins left</div>
-          </div>
-          <div style="text-align:right;">
-            <div class="field-label">Total Planned Left</div>
-            <div id="budgetTabPlanned" class="mono" style="font-size:20px; font-weight:900; color:var(--emerald);">0 mins</div>
-          </div>
-        </div>
-
-        <div class="card">
-          <div style="font-size:13px; font-weight:800; color:var(--gold-light); margin-bottom:8px;">➕ Allocate Minutes to a Task</div>
-          <input id="newTaskTitle" type="text" class="input-field" placeholder="e.g., Deep Work, Workout, Reading, Project..." />
-          <div class="form-grid-3">
-            <div>
-              <div class="field-label">Minutes</div>
-              <input id="newTaskMinutes" type="number" value="30" min="5" max="720" class="input-field mono" />
-            </div>
-            <div>
-              <div class="field-label">Category</div>
-              <select id="newTaskCategory" class="select-field">
-                <option value="Dream Goal">🎯 Goal</option>
-                <option value="Work">💼 Work</option>
-                <option value="Health">💪 Health</option>
-                <option value="Learning">📚 Learn</option>
-              </select>
-            </div>
-            <div>
-              <div class="field-label">Type</div>
-              <select id="newTaskType" class="select-field">
-                <option value="today">Today</option>
-                <option value="fixed">Daily Fix</option>
-              </select>
-            </div>
-          </div>
-          <button class="btn btn-gold" style="width:100%;" onclick="addNewTask()">+ Lock In Minute Budget</button>
-        </div>
-
-        <div class="card">
-          <div style="font-size:14px; font-weight:800;">🔁 Daily Fixed Commitments</div>
-          <div style="font-size:11px; color:var(--text-muted);">Non-negotiable minutes reserved for your goals every single day</div>
-          <div id="fixedTasksList" class="task-list"></div>
-        </div>
-
-        <div class="card">
-          <div style="font-size:14px; font-weight:800;">📅 Today's Minute Schedule</div>
-          <div style="font-size:11px; color:var(--text-muted);">One-time tasks bud
+  <nav class="bnav">
+    <button id="nav-bank" class="nbtn active" onclick="swTab('bank')"><span>⏳</span><span>1440 Bank</span></button>
+    <button id="nav-budget" class="nbtn" onclick="swTab('budget')"><span>📋</span><span>Schedule</span></button>
+    <button id="nav-focus" class="nbtn" onclick="swTab('focus')"><span>🔥</span><span>Focus Timer</span></button>
+    <button id="nav-audit" class="nbtn" onclick="swTab('audit')"><span>🛡️</span><span>Focus Guard</span></button>
+  </nav>
+</div>
+<div id="toast" class="toast">Saved!</div>
+<script>
+const KEY="1440_v5";let snd=true,ctx=null;
+let st={date:new Date().toDateString(),inv:0,lk:0,fix:[{id:"f1",title:"Build My Dream Goal",cat:"Dream Goal",mins:90,sp:0,done:false},{id:"f2",title:"Health & Exercise",cat:"Health",mins:45,sp:0,done:false}],tod:[{id:"t1",title:"High-Priority Focus Block",cat:"Dream Goal",mins:25,sp:0,done:false}],log:[{t:"00:00",msg:"1,440 Minutes Deposited",tp:"dep",m:1440}]};
+let ft={id:null,tp:null,title:"Deep Goal Sprint",cat:"🎯 DREAM GOAL",tot:1500,rem:1500,run:false,iv:null};
+function esc(s){const d=document.createElement("div");d.textContent=String(s||"");return d.innerHTML;}
+function beep(tp){if(!snd)return;try{if(!ctx)ctx=new(window.AudioContext||window.webkitAudioContext)();if(ctx.state==="suspended")ctx.resume();const o=ctx.createOscillator(),g=ctx.createGain();o.connect(g);g.connect(ctx.destination);const n=ctx.currentTime;if(tp==="tick"){o.frequency.setValueAtTime(880,n);g.gain.setValueAtTime(.025,n);g.gain.exponentialRampToValueAtTime(.001,n+.035);o.start(n);o.stop(n+.035);}else{o.frequency.setValueAtTime(587,n);g.gain.setValueAtTime(.08,n);g.gain.exponentialRampToValueAtTime(.001,n+.35);o.start(n);o.stop(n+.35);}}catch(e){}}
+function togSnd(){snd=!snd;document.getElementById("sBtn").textContent=snd?"🔊":"🔇";msg(snd?"Tick Sound ON":"Sound Muted");}
+function load(){try{const r=localStorage.getItem(KEY),td=new Date().toDateString();if(r){const p=JSON.parse(r);if(p.date!==td){st.date=td;st.inv=0;st.lk=0;st.fix=(p.fix||st.fix).map(x=>({...x,sp:0,done:false}));st.tod=[];st.log=[{t:"00:00",msg:"Fresh 1,440m Deposited",tp:"dep",m:1440}];save();}else st=p;}else save();}catch(e){}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(st));syncGuard(false);}catch(e){}}
+function syncGuard(show){try{const act=[...st.fix,...st.tod].find(x=>!x.done);const nxt=act?(act.title+" ("+Math.max(0,act.mins-(act.sp||0))+"m left)"):"All scheduled tasks completed!";if(window.Android1440&&window.Android1440.syncGuard){window.Android1440.syncGuard(st.inv,nxt,ft.run,ft.title,ft.rem,ft.tot);}if(show)msg("Lockscreen Guard Synced!");}catch(e){}}
+function tick(){
+  const nw=new Date(),el=(nw.getHours()*60)+nw.getMinutes(),rem=1440-el,sc=60-nw.getSeconds();
+  let pl=0;[...st.fix,...st.tod].forEach(x=>{if(!x.done)pl+=Math.max(0,x.mins-(x.sp||0));});
+  const fr=rem-pl,pct=((rem/1440)*100).toFixed(1);
+  document.getElementById("hDate").textContent=nw.toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"});
+  document.getElementById("clock").textContent=nw.toLocaleTimeString("en-US",{hour12:false});
+  document.getElementById("topRem").textContent=rem+"m";
+  document.getElementById("hMins").textContent=rem.toLocaleString();
+  document.getElementById("hSecs").textContent=String(sc).padStart(2,"0")+"s";
+  document.getElementById("secBar").style.width=((sc/60)*100)+"%";
+  document.getElementById("dayPct").textContent=pct+"% of today left";
+  document.getElementById("lEl").textContent=el+"m";
+  document.getElementById("lIn").textContent=st.inv+"m";
+  document.getElementById("lSc").textContent=pl+"m";
+  document.getElementById("lFr").textContent=fr+"m";
+  document.getElementById("ovAlert").style.display=fr<0?"block":"none";
+  document.getElementById("bEl").style.width=(Math.max(0,el-st.inv-st.lk)/14.4)+"%";
+  document.getElementById("bIn").style.width=(st.inv/14.4)+"%";
+  document.getElementById("bLk").style.width=(st.lk/14.4)+"%";
+  document.getElementById("bSc").style.width=Math.min(100,pl/14.4)+"%";
+  document.getElementById("bRem").textContent=rem+"m left";
+  document.getElementById("bPlan").textContent=pl+"m";
+  document.getElementById("fDay").textContent=rem+"m";
+  document.getElementById("lClk").textContent=nw.toLocaleTimeString([],{hour:"2-digit",minute:"2-digit",hour12:false});
+  document.getElementById("lInv").textContent="Invested: "+st.inv+"m";
+  if(ft.run){
+    const m=Math.floor(ft.rem/60),s=String(ft.rem%60).padStart(2,"0");
+    document.getElementById("lHdr").textContent="🔥 ACTIVE TASK ON LOCKSCREEN";
+    document.getElementById("lMain").textContent=ft.title+" ("+m+":"+s+" left)";
+    document.getElementById("lNext").textContent="⏳ Day Balance Left: "+rem+" mins";
+    document.getElementById("lBar").style.width=((ft.rem/Math.max(1,ft.tot))*100)+"%";
+  }else{
+    document.getElementById("lHdr").textContent="⏳ 1440 MINUTE BANK • PERMANENT";
+    document.getElementById("lMain").textContent=rem+" mins left today";
+    document.getElementById("lBar").style.width=pct+"%";
+    const a=[...st.fix,...st.tod].find(x=>!x.done);
+    document.getElementById("lNext").textContent=a?("Active Goal: "+a.title+" ("+a.mins+"m)"):"All scheduled goals completed!";
+  }
+}
+function render(){
+  const act=[...st.fix.map(x=>({...x,tp:"fix"})),...st.tod.map(x=>({...x,tp:"tod"}))].filter(x=>!x.done);
+  document.getElementById("homeList").innerHTML=act.length?act.map(x=>`<div class="titem"><div><div class="tt">${esc(x.title)}</div><div class="tm">${esc(x.cat)} • ${x.sp||0}/${x.mins}m</div></div><button class="sbtn" onclick="goTask('${x.id}','${x.tp}')">▶ Spend ${Math.max(1,x.mins-(x.sp||0))}m</button></div>`).join(""):`<div class="tm">All tasks done! Add more in Schedule.</div>`;
+  const card=(x,tp)=>`<div class="titem"><div class="row"><button class="chk ${x.done?"done":""}" onclick="togDone('${x.id}','${tp}')">${x.done?"✓":""}</button><div><div class="tt ${x.done?"done":""}">${esc(x.title)}</div><div class="tm">${esc(x.cat)} • ${x.sp||0}/${x.mins}m</div></div></div><div class="row" style="gap:6px">${!x.done?`<button class="sbtn" onclick="goTask('${x.id}','${tp}')">▶ Spend</button>`:""}<button onclick="delT('${x.id}','${tp}')" style="background:0;border:none;color:var(--dim);font-size:15px">✕</button></div></div>`;
+  document.getElementById("fixList").innerHTML=st.fix.map(x=>card(x,"fix")).join("");
+  document.getElementById("todList").innerHTML=st.tod.map(x=>card(x,"tod")).join("");
+  document.getElementById("lkTot").textContent=st.lk+" mins";
+  const tot=st.inv+st.lk;document.getElementById("effDisp").textContent=(tot?Math.round((st.inv/tot)*100):100)+"%„";
+  document.getElementById("pList").innerHTML=st.log.slice().reverse().map(l=>`<div class="titem"><div style="font-size:12px"><b>${esc(l.t)}</b> • ${esc(l.msg)}</div><b class="mono" style="font-size:12px;color:${l.tp==="inv"?"var(--em)":l.tp==="lk"?"var(--rose)":"var(--glt)"}">${l.tp==="inv"?"+":l.tp==="lk"?"-":""}${l.m}m</b></div>`).join("");
+}
+function addTask(){
+  const ti=document.getElementById("tTitle"),m=parseInt(document.getElementById("tMins").value,10),c=document.getElementById("tCat").value,tp=document.getElementById("tType").value;
+  if(!ti.value.trim())return msg("Enter task title first");
+  const obj={id:"id_"+Date.now(),title:ti.value.trim(),cat:c,mins:Math.max(1,m||25),sp:0,done:false};
+  if(tp==="fixed")st.fix.push(obj);else st.tod.push(obj);
+  ti.value="";beep("ok");save();tick();render();msg("Task Budget Locked In!");
+}
+function togDone(id,tp){
+  const ls=tp==="fix"?st.fix:st.tod,t=ls.find(x=>x.id===id);if(!t)return;
+  t.done=!t.done;if(t.done){const left=Math.max(0,t.mins-(t.sp||0));if(left>0){t.sp=t.mins;st.inv+=left;addLog("Completed: "+t.title,"inv",left);}beep("ok");}
+  save();tick();render();
+}
+function delT(id,tp){if(tp==="fix")st.fix=st.fix.filter(x=>x.id!==id);else st.tod=st.tod.filter(x=>x.id!==id);save();tick();render();}
+function goTask(id,tp){
+  const ls=tp==="fix"?st.fix:st.tod,t=ls.find(x=>x.id===id);if(!t)return;
+  stopFoc();const rem=Math.max(1,t.mins-(t.sp||0));
+  ft={id,tp,title:t.title,cat:"🎯 "+t.cat.toUpperCase(),tot:rem*60,rem:rem*60,run:false,iv:null};
+  upFoc();swTab("focus");togFoc();
+}
+function quickFoc(m,title){stopFoc();ft={id:null,tp:"q",title,cat:"⚡ QUICK SPRINT",tot:m*60,rem:m*60,run:false,iv:null};upFoc();swTab("focus");togFoc();}
+function setDur(m){stopFoc();ft.tot=m*60;ft.rem=m*60;upFoc();}
+function add5(){ft.tot+=300;ft.rem+=300;upFoc();syncGuard(false);msg("+5m Added");}
+function togFoc(){
+  if(ft.run){stopFoc();}else{
+    ft.run=true;beep("tick");document.getElementById("fPlay").textContent="⏸ Pause Timer";document.getElementById("fSub").textContent="Live on Lockscreen & Investing...";
+    syncGuard(false);tick();
+    ft.iv=setInterval(()=>{if(ft.rem>0){ft.rem--;if(ft.rem%60===0&&ft.rem!==ft.tot)cred1();beep("tick");upFoc();}else doneFoc();},1000);
+  }
+}
+function stopFoc(){ft.run=false;if(ft.iv){clearInterval(ft.iv);ft.iv=null;}document.getElementById("fPlay").textContent="▶ Start Investing";document.getElementById("fSub").textContent="Timer Paused";syncGuard(false);tick();}
+function cred1(){st.inv++;if(ft.id){const ls=ft.tp==="fix"?st.fix:st.tod,t=ls.find(x=>x.id===ft.id);if(t){t.sp=(t.sp||0)+1;if(t.sp>=t.mins)t.done=true;}}save();tick();render();}
+function doneFoc(){
+  const m=Math.max(1,Math.round((ft.tot-ft.rem)/60));stopFoc();st.inv+=m;
+  if(ft.id){const ls=ft.tp==="fix"?st.fix:st.tod,t=ls.find(x=>x.id===ft.id);if(t){t.sp=(t.sp||0)+m;if(t.sp>=t.mins)t.done=true;}}
+  addLog("Invested: "+ft.title,"inv",m);ft.rem=ft.tot;upFoc();beep("ok");save();tick();render();msg("+"+m+"m Invested!");
+}
+function upFoc(){
+  document.getElementById("fTit").textContent=ft.title;document.getElementById("fCat").textContent=ft.cat;
+  document.getElementById("fDisp").textContent=String(Math.floor(ft.rem/60)).padStart(2,"0")+":"+String(ft.rem%60).padStart(2,"0");
+  document.getElementById("fRing").style.strokeDashoffset=326.7-(326.7*(ft.rem/Math.max(1,ft.tot)));
+}
+function leak(m,r){st.lk+=m;addLog("Leak: "+r,"lk",m);beep("lk");save();tick();render();msg("-"+m+"m Leaked ("+r+")");}
+function addLog(msg,tp,m){st.log.push({t:new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit",hour12:false}),msg,tp,m});}
+function rstDay(){st.inv=0;st.lk=0;st.fix.forEach(x=>{x.sp=0;x.done=false;});st.tod.forEach(x=>{x.sp=0;x.done=false;});st.log=[{t:"Reset",msg:"Ledger Reset",tp:"dep",m:1440}];save();tick();render();msg("Day Reset!");}
+function swTab(t){["bank","budget","focus","audit"].forEach(x=>{document.getElementById("tab-"+x).classList.remove("active");document.getElementById("nav-"+x).classList.remove("active");});document.getElementById("tab-"+t).classList.add("active");document.getElementById("nav-"+t).classList.add("active");}
+let tm=null;function msg(s){const b=document.getElementById("toast");b.textContent=s;b.style.display="block";clearTimeout(tm);tm=setTimeout(()=>b.style.display="none",2200);}
+window.onload=()=>{load();tick();render();upFoc();syncGuard(false);setInterval(tick,1000);};
+</script>
+</body>
+</html>

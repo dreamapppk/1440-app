@@ -310,14 +310,17 @@ jobs:
           sed -i 's|<application|<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />\n    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />\n    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />\n    <application|g' android/app/src/main/AndroidManifest.xml
           sed -i 's|</application>|    <service android:name=".MinuteGuardService" android:enabled="true" android:exported="false" android:foregroundServiceType="specialUse"><property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE" android:value="live_daily_1440_minute_countdown" /></service>\n    </application>|g' android/app/src/main/AndroidManifest.xml
 
-          # 5. Generate Keystore precisely inside android/app/ and configure Gradle
+          # 5. Generate Keystore, Set minSdk to 24, Configure Signing & Build Signed Release AAB
           cd android/app
           keytool -genkey -v -keystore release.jks -keyalg RSA -keysize 2048 -validity 10000 -alias release-key -storepass password123 -keypass password123 -dname "CN=Android, OU=Dev, O=App, L=Bakhira, ST=UP, C=IN"
 
-          cd ..
-          cat << 'EOT' >> app/build.gradle
+          cd ../..
+          cat << 'EOT' >> android/app/build.gradle
 
           android {
+              defaultConfig {
+                  minSdk 24
+              }
               signingConfigs {
                   release {
                       storeFile file('release.jks')
@@ -334,6 +337,7 @@ jobs:
           }
           EOT
 
+          cd android
           chmod +x gradlew
           ./gradlew bundleRelease
 

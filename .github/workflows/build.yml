@@ -310,12 +310,12 @@ jobs:
           sed -i 's|<application|<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />\n    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />\n    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />\n    <application|g' android/app/src/main/AndroidManifest.xml
           sed -i 's|</application>|    <service android:name=".MinuteGuardService" android:enabled="true" android:exported="false" android:foregroundServiceType="specialUse"><property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE" android:value="live_daily_1440_minute_countdown" /></service>\n    </application>|g' android/app/src/main/AndroidManifest.xml
 
-          # 5. Compile and Sign using standard debug keystore fallback (Guaranteed to pass build)
+          # 5. Compile Release AAB (Play Store Ready with Play App Signing support)
           cd android
           chmod +x gradlew
-          ./gradlew assembleDebug bundleDebug
+          ./gradlew bundleRelease
 
-      - name: Upload Ready APK
+      - name: Upload Ready APK (For Phone Testing)
         uses: actions/upload-artifact@v4
         with:
           name: 1440-Offline-APK
@@ -325,4 +325,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: 1440-PlayStore-AAB
-          path: android/app/build/outputs/bundle/debug/app-debug.aab
+          path: android/app/build/outputs/bundle/release/app-release.aab

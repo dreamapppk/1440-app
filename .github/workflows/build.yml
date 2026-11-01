@@ -310,14 +310,11 @@ jobs:
           sed -i 's|<application|<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />\n    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />\n    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />\n    <application|g' android/app/src/main/AndroidManifest.xml
           sed -i 's|</application>|    <service android:name=".MinuteGuardService" android:enabled="true" android:exported="false" android:foregroundServiceType="specialUse"><property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE" android:value="live_daily_1440_minute_countdown" /></service>\n    </application>|g' android/app/src/main/AndroidManifest.xml
 
-          # 5. Generate Keystore, Configure Signing in build.gradle, and Build Signed Release AAB
-          cd android
-          chmod +x gradlew
-          
-          # Generate signing keystore automatically inside workflow
+          # 5. Generate Keystore precisely inside android/app/ and configure Gradle
+          cd android/app
           keytool -genkey -v -keystore release.jks -keyalg RSA -keysize 2048 -validity 10000 -alias release-key -storepass password123 -keypass password123 -dname "CN=Android, OU=Dev, O=App, L=Bakhira, ST=UP, C=IN"
 
-          # Inject signing config directly into app/build.gradle
+          cd ..
           cat << 'EOT' >> app/build.gradle
 
           android {
@@ -337,6 +334,7 @@ jobs:
           }
           EOT
 
+          chmod +x gradlew
           ./gradlew bundleRelease
 
       - name: Upload Signed Play Store AAB
